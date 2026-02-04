@@ -208,20 +208,17 @@ function DroppableColumn({
   isExpanded,
   onToggleExpand,
 }: DroppableColumnProps) {
-  const { setNodeRef } = useDroppable({ id: status })
+  const { setNodeRef, isOver: isOverDroppable } = useDroppable({ id: status })
   const INITIAL_LOAD = 10
   const visibleTasks = isExpanded || tasks.length <= INITIAL_LOAD ? tasks : tasks.slice(0, INITIAL_LOAD)
   const hasMore = tasks.length > INITIAL_LOAD
   const taskIds = visibleTasks.map(t => t.id)
-  
-  // Check if we're dragging over this column (but not over a specific task)
-  const isDraggingOverColumn = isOver && !visibleTasks.some(t => overId === t.id)
 
   return (
     <div
       ref={setNodeRef}
       className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all duration-200 ${
-        isOver ? 'scale-105 ring-4 ring-purple-500 bg-purple-500/20 shadow-2xl shadow-purple-500/50' : ''
+        isOverDroppable ? 'scale-105 ring-4 ring-purple-500 bg-purple-500/20 shadow-2xl shadow-purple-500/50' : ''
       }`}
     >
       <div className="flex items-center justify-between mb-4">
