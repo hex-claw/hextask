@@ -6,13 +6,13 @@ import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
 import { 
   Plus, 
-  Filter, 
   Search,
   LayoutGrid,
   List,
   Bot,
   User as UserIcon,
-  Hexagon
+  Hexagon,
+  LogOut
 } from 'lucide-react'
 
 type ViewMode = 'list' | 'board'
@@ -21,35 +21,72 @@ type FilterStatus = Task['status'] | 'all'
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalTask, setModalTask] = useState<Task | null | 'new'>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [filterAssignee, setFilterAssignee] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [parentIdForNew, setParentIdForNew] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // Fetch data
+  // Load saved user from localStorage
   useEffect(() => {
-    fetchData()
+    const savedUserId = localStorage.getItem('hextask_user_id')
+    if (savedUserId) {
+      fetchData(savedUserId)
+    } else {
+      fetchUsers()
+    }
   }, [])
 
-  const fetchData = async () => {
-    setLoading(true)
-    
-    // Fetch users
-    const { data: usersData } = await supabase
+  const fetchUsers = async () => {
+    const { data: usersData, error } = await supabase
       .from('users')
       .select('*')
     
+    if (error) {
+      console.error('Error fetching users:', error)
+      setError('Failed to load users')
+    }
+    if (usersData) setUsers(usersData)
+    setLoading(false)
+  }
+
+  const fetchData = async (userId?: string) => {
+    setLoading(true)
+    setError(null)
+    
+    // Fetch users
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('*')
+    
+    if (usersError) {
+      console.error('Error fetching users:', usersError)
+      setError('Failed to load users')
+    }
+    
     // Fetch tasks
-    const { data: tasksData } = await supabase
+    const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .order('position', { ascending: true })
       .order('created_at', { ascending: false })
     
-    if (usersData) setUsers(usersData)
+    if (tasksError) {
+      console.error('Error fetching tasks:', tasksError)
+      setError('Failed to load tasks')
+    }
+    
+    if (usersData) {
+      setUsers(usersData)
+      if (userId) {
+        const user = usersData.find(u => u.id === userId)
+        if (user) setCurrentUser(user)
+      }
+    }
+    
     if (tasksData) {
       // Build task tree
       const taskMap = new Map<string, Task>()
@@ -72,6 +109,18 @@ export default function Home() {
     setLoading(false)
   }
 
+  // Select user (simple auth)
+  const selectUser = (user: User) => {
+    localStorage.setItem('hextask_user_id', user.id)
+    setCurrentUser(user)
+    fetchData(user.id)
+  }
+
+  const logout = () => {
+    localStorage.removeItem('hextask_user_id')
+    setCurrentUser(null)
+  }
+
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
     if (filterStatus !== 'all' && task.status !== filterStatus) return false
@@ -91,45 +140,78 @@ export default function Home() {
 
   // Save task
   const handleSaveTask = async (taskData: Partial<Task>) => {
-    if (taskData.id) {
-      // Update
-      const { error } = await supabase
-        .from('tasks')
-        .update(taskData)
-        .eq('id', taskData.id)
+    setError(null)
+    
+    try {
+      if (taskData.id) {
+        // Update
+        const { id, subtasks, assignee, ...updateData } = taskData as Task
+        const { error } = await supabase
+          .from('tasks')
+          .update(updateData)
+          .eq('id', id)
+        
+        if (error) {
+          console.error('Error updating task:', error)
+          setError(`Failed to update task: ${error.message}`)
+          return
+        }
+      } else {
+        // Create
+        const { subtasks, assignee, ...insertData } = taskData as Task
+        const { error } = await supabase
+          .from('tasks')
+          .insert([insertData])
+        
+        if (error) {
+          console.error('Error creating task:', error)
+          setError(`Failed to create task: ${error.message}`)
+          return
+        }
+      }
       
-      if (!error) fetchData()
-    } else {
-      // Create
-      const { error } = await supabase
-        .from('tasks')
-        .insert([taskData])
-      
-      if (!error) fetchData()
+      fetchData(currentUser?.id)
+      setModalTask(null)
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setError('An unexpected error occurred')
     }
-    setModalTask(null)
-    setParentIdForNew(null)
   }
 
   // Delete task
   const handleDeleteTask = async (id: string) => {
+    setError(null)
+    
     const { error } = await supabase
       .from('tasks')
       .delete()
       .eq('id', id)
     
-    if (!error) fetchData()
+    if (error) {
+      console.error('Error deleting task:', error)
+      setError(`Failed to delete task: ${error.message}`)
+      return
+    }
+    
+    fetchData(currentUser?.id)
     setModalTask(null)
   }
 
   // Update task (quick update from card)
   const handleUpdateTask = async (taskData: Partial<Task> & { id: string }) => {
+    const { subtasks, assignee, ...updateData } = taskData as Task & { id: string }
     const { error } = await supabase
       .from('tasks')
-      .update(taskData)
+      .update(updateData)
       .eq('id', taskData.id)
     
-    if (!error) fetchData()
+    if (error) {
+      console.error('Error updating task:', error)
+      setError(`Failed to update task: ${error.message}`)
+      return
+    }
+    
+    fetchData(currentUser?.id)
   }
 
   const statusLabels = {
@@ -140,8 +222,57 @@ export default function Home() {
     done: 'Done',
   }
 
+  // User selection screen
+  if (!currentUser && !loading) {
+    return (
+      <main className="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <div className="glass p-8 max-w-md w-full text-center">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-purple-600/30 rounded-2xl">
+              <Hexagon size={48} className="text-purple-400" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold mb-2">HexTask</h1>
+          <p className="text-gray-400 mb-8">Select your profile to continue</p>
+          
+          <div className="space-y-3">
+            {users.map((user) => (
+              <button
+                key={user.id}
+                onClick={() => selectUser(user)}
+                className="w-full p-4 glass hover:border-purple-500/50 transition-all flex items-center gap-4"
+              >
+                <div className={`p-3 rounded-full ${user.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
+                  {user.is_ai ? (
+                    <Bot size={24} className="text-purple-400" />
+                  ) : (
+                    <UserIcon size={24} className="text-blue-400" />
+                  )}
+                </div>
+                <div className="text-left">
+                  <div className="font-medium">{user.name}</div>
+                  <div className="text-sm text-gray-400">
+                    {user.is_ai ? 'AI Assistant' : 'Human'}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen gradient-bg">
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 text-center">
+          {error}
+          <button onClick={() => setError(null)} className="ml-4 underline">Dismiss</button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="glass border-b border-white/10 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -156,13 +287,32 @@ export default function Home() {
               </div>
             </div>
 
-            <button
-              onClick={() => setModalTask('new')}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors"
-            >
-              <Plus size={20} />
-              New Task
-            </button>
+            <div className="flex items-center gap-4">
+              {/* Current user indicator */}
+              {currentUser && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
+                  <div className={`p-1 rounded-full ${currentUser.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
+                    {currentUser.is_ai ? (
+                      <Bot size={14} className="text-purple-400" />
+                    ) : (
+                      <UserIcon size={14} className="text-blue-400" />
+                    )}
+                  </div>
+                  <span className="text-sm">{currentUser.name}</span>
+                  <button onClick={logout} className="ml-2 text-gray-400 hover:text-white">
+                    <LogOut size={14} />
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={() => setModalTask('new')}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors"
+              >
+                <Plus size={20} />
+                New Task
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -294,10 +444,9 @@ export default function Home() {
         <TaskModal
           task={modalTask === 'new' ? null : modalTask}
           users={users}
-          onClose={() => { setModalTask(null); setParentIdForNew(null) }}
+          onClose={() => setModalTask(null)}
           onSave={handleSaveTask}
           onDelete={handleDeleteTask}
-          parentId={parentIdForNew}
         />
       )}
     </main>
