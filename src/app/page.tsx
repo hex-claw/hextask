@@ -157,8 +157,8 @@ export default function Home() {
           return
         }
       } else {
-        // Create
-        const { subtasks, assignee, ...insertData } = taskData as Task
+        // Create - exclude id field
+        const { id, subtasks, assignee, ...insertData } = taskData as Task
         const { error } = await supabase
           .from('tasks')
           .insert([insertData])
