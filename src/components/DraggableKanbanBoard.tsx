@@ -50,6 +50,7 @@ export function DraggableKanbanBoard({
 }: DraggableKanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null)
+  const [expandedColumns, setExpandedColumns] = useState<Set<Task['status']>>(new Set())
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -144,6 +145,16 @@ export function DraggableKanbanBoard({
               overId={overId}
               onDelete={onDelete}
               onDuplicate={onDuplicate}
+              isExpanded={expandedColumns.has(status)}
+              onToggleExpand={() => {
+                const newSet = new Set(expandedColumns)
+                if (newSet.has(status)) {
+                  newSet.delete(status)
+                } else {
+                  newSet.add(status)
+                }
+                setExpandedColumns(newSet)
+              }}
             />
           ))}
         </div>
@@ -177,6 +188,8 @@ interface DroppableColumnProps {
   overId: UniqueIdentifier | null
   onDelete?: (id: string) => void
   onDuplicate?: (task: Task) => void
+  isExpanded: boolean
+  onToggleExpand: () => void
 }
 
 function DroppableColumn({
@@ -191,8 +204,13 @@ function DroppableColumn({
   overId,
   onDelete,
   onDuplicate,
+  isExpanded,
+  onToggleExpand,
 }: DroppableColumnProps) {
   const { setNodeRef } = useSortable({ id: status })
+  const INITIAL_LOAD = 10
+  const visibleTasks = isExpanded || tasks.length <= INITIAL_LOAD ? tasks : tasks.slice(0, INITIAL_LOAD)
+  const hasMore = tasks.length > INITIAL_LOAD
   const taskIds = tasks.map(t => t.id)
 
   return (
@@ -219,11 +237,11 @@ function DroppableColumn({
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1 overflow-y-auto">
           {/* Drop indicator at top when hovering over column (always show if hovering) */}
-          {isOver && tasks.length > 0 && !tasks.some(t => overId === t.id) && (
+          {isOver && visibleTasks.length > 0 && !visibleTasks.some(t => overId === t.id) && (
             <div className="h-0.5 bg-purple-500 rounded-full mb-1" />
           )}
           
-          {tasks.map((task, index) => (
+          {visibleTasks.map((task, index) => (
             <SortableTask
               key={task.id}
               task={task}
@@ -235,6 +253,16 @@ function DroppableColumn({
               onDuplicate={onDuplicate}
             />
           ))}
+          
+          {/* Load more button */}
+          {hasMore && !isExpanded && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
+              className="w-full p-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10"
+            >
+              Load more ({tasks.length - INITIAL_LOAD} hidden)
+            </button>
+          )}
           
           {tasks.length === 0 && (
             <div className={`text-center py-8 text-gray-600 text-sm border-2 border-dashed rounded-lg transition-all ${

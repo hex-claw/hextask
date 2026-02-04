@@ -31,16 +31,23 @@ export function MobileKanban({
   const [collapsed, setCollapsed] = useState<{ [K in Task['status']]?: boolean }>({
     done: true // Collapse done by default
   })
+  const [expanded, setExpanded] = useState<{ [K in Task['status']]?: boolean }>({})
 
   const toggleCollapse = (status: Task['status']) => {
     setCollapsed(prev => ({ ...prev, [status]: !prev[status] }))
   }
 
+  const INITIAL_LOAD = 10
+
   return (
     <div className="space-y-3">
       {(Object.keys(statusGroups) as Task['status'][]).map((status) => {
         const isCollapsed = collapsed[status]
-        const taskCount = statusGroups[status].length
+        const isExpanded = expanded[status]
+        const allTasks = statusGroups[status]
+        const taskCount = allTasks.length
+        const visibleTasks = isExpanded || taskCount <= INITIAL_LOAD ? allTasks : allTasks.slice(0, INITIAL_LOAD)
+        const hasMore = taskCount > INITIAL_LOAD
 
         return (
           <div key={status} className="glass overflow-hidden">
@@ -78,17 +85,32 @@ export function MobileKanban({
                     No tasks
                   </div>
                 ) : (
-                  statusGroups[status].map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      users={users}
-                      onUpdate={onUpdate}
-                      onSelect={onSelect}
-                      onDelete={onDelete}
-                      onDuplicate={onDuplicate}
-                    />
-                  ))
+                  <>
+                    {visibleTasks.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        users={users}
+                        onUpdate={onUpdate}
+                        onSelect={onSelect}
+                        onDelete={onDelete}
+                        onDuplicate={onDuplicate}
+                      />
+                    ))}
+                    
+                    {/* Load more button */}
+                    {hasMore && !isExpanded && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setExpanded(prev => ({ ...prev, [status]: true }))
+                        }}
+                        className="w-full p-2 text-sm text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10"
+                      >
+                        Load more ({taskCount - INITIAL_LOAD} hidden)
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}

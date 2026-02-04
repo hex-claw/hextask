@@ -32,6 +32,7 @@ export default function Home() {
   const [modalTask, setModalTask] = useState<Task | null | 'new'>(null)
   const [newTaskStatus, setNewTaskStatus] = useState<Task['status'] | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('board')
+  const [listViewLimit, setListViewLimit] = useState(20)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [filterAssignee, setFilterAssignee] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -405,17 +406,31 @@ export default function Home() {
                 No tasks found. Create one to get started!
               </div>
             ) : (
-              filteredTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  users={users}
-                  onUpdate={handleUpdateTask}
-                  onSelect={(t) => setModalTask(t)}
-                  onDelete={handleDeleteTask}
-                  onDuplicate={handleDuplicateTask}
-                />
-              ))
+              <>
+                {filteredTasks.slice(0, listViewLimit).map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    users={users}
+                    onUpdate={handleUpdateTask}
+                    onSelect={(t) => setModalTask(t)}
+                    onDelete={handleDeleteTask}
+                    onDuplicate={handleDuplicateTask}
+                  />
+                ))}
+                
+                {/* Load more button for list view */}
+                {filteredTasks.length > listViewLimit && (
+                  <div className="py-4 text-center">
+                    <button
+                      onClick={() => setListViewLimit(limit => limit + 20)}
+                      className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm transition-colors"
+                    >
+                      Load more ({filteredTasks.length - listViewLimit} hidden)
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : (
