@@ -222,7 +222,7 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col min-h-[400px] transition-all duration-200 ${
+      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all duration-200 ${
         isOverDroppable ? 'scale-105 ring-4 ring-purple-500 bg-purple-500/20 shadow-2xl shadow-purple-500/50' : ''
       }`}
     >
@@ -241,9 +241,9 @@ function DroppableColumn({
       </div>
       
       <SortableContext items={taskIds.length > 0 ? taskIds : ['placeholder']} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3 flex-1 overflow-y-auto min-h-[300px]">
+        <div className="space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-280px)]">
           {visibleTasks.length === 0 ? (
-            <div className="flex items-center justify-center h-full min-h-[300px] text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
+            <div className="flex items-center justify-center h-32 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
               No tasks
             </div>
           ) : (
@@ -270,20 +270,20 @@ function DroppableColumn({
               )}
             </>
           )}
-          
-          {/* Quick create button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onQuickCreate(status)
-            }}
-            className="mt-2 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2"
-          >
-            <Plus size={16} />
-            Add task
-          </button>
         </div>
       </SortableContext>
+      
+      {/* Quick create button - outside scrollable area */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onQuickCreate(status)
+        }}
+        className="mt-3 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2 flex-shrink-0"
+      >
+        <Plus size={16} />
+        Add task
+      </button>
     </div>
   )
 }
