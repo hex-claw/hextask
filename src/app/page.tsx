@@ -346,7 +346,7 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 pb-8">
+      <div className="px-4 pb-8 overflow-x-auto">
         {loading ? (
           <div className="glass p-8 text-center text-gray-400">
             Loading tasks...
@@ -372,9 +372,9 @@ export default function Home() {
           </div>
         ) : (
           /* Board View */
-          <div className="grid grid-cols-5 gap-4 overflow-x-auto">
+          <div className="flex gap-4 min-h-[calc(100vh-220px)] pb-4">
             {(Object.keys(statusGroups) as Task['status'][]).map((status) => (
-              <div key={status} className="glass p-4 min-w-[280px]">
+              <div key={status} className="glass p-4 w-[280px] flex-shrink-0 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${
@@ -388,7 +388,7 @@ export default function Home() {
                   </div>
                   <span className="text-sm text-gray-500 bg-white/5 px-2 py-0.5 rounded">{statusGroups[status].length}</span>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 flex-1 overflow-y-auto">
                   {statusGroups[status].map((task) => (
                     <BoardCard
                       key={task.id}
