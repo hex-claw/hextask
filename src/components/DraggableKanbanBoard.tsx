@@ -208,6 +208,11 @@ function DroppableColumn({
       
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1 overflow-y-auto">
+          {/* Drop indicator at top when hovering over column */}
+          {isOver && tasks.length > 0 && (
+            <div className="h-0.5 bg-purple-500 rounded-full -mb-1.5" />
+          )}
+          
           {tasks.map((task, index) => (
             <SortableTask
               key={task.id}
@@ -215,7 +220,7 @@ function DroppableColumn({
               users={users}
               onUpdate={onUpdate}
               onSelect={onSelect}
-              isOverFromParent={overId === task.id || (overId === status && index === 0)}
+              isOverFromParent={overId === task.id}
             />
           ))}
           
