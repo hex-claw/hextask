@@ -68,7 +68,8 @@ export function DraggableKanbanBoard({
   }
 
   const handleDragOver = (event: DragOverEvent) => {
-    setOverId(event.over?.id || null)
+    const { over } = event
+    setOverId(over?.id || null)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -207,14 +208,14 @@ function DroppableColumn({
       
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1 overflow-y-auto">
-          {tasks.map((task) => (
+          {tasks.map((task, index) => (
             <SortableTask
               key={task.id}
               task={task}
               users={users}
               onUpdate={onUpdate}
               onSelect={onSelect}
-              isOverFromParent={overId === task.id}
+              isOverFromParent={overId === task.id || (overId === status && index === 0)}
             />
           ))}
           

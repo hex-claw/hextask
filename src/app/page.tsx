@@ -7,6 +7,7 @@ import { getCurrentUser, signOut, onAuthStateChange } from '@/lib/auth'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
 import { DraggableKanbanBoard } from '@/components/DraggableKanbanBoard'
+import { MobileKanban } from '@/components/MobileKanban'
 import { 
   Plus, 
   Search,
@@ -393,17 +394,33 @@ export default function Home() {
           </div>
         ) : (
           /* Board View */
-          <DraggableKanbanBoard
-            statusGroups={statusGroups}
-            statusLabels={statusLabels}
-            users={users}
-            onUpdate={handleUpdateTask}
-            onSelect={(t) => setModalTask(t)}
-            onQuickCreate={(status) => {
-              setNewTaskStatus(status)
-              setModalTask('new')
-            }}
-          />
+          <>
+            {/* Mobile: Vertical Accordion */}
+            <div className="md:hidden px-2 py-4">
+              <MobileKanban
+                statusGroups={statusGroups}
+                statusLabels={statusLabels}
+                users={users}
+                onUpdate={handleUpdateTask}
+                onSelect={(t) => setModalTask(t)}
+              />
+            </div>
+
+            {/* Desktop: Horizontal Draggable Board */}
+            <div className="hidden md:block">
+              <DraggableKanbanBoard
+                statusGroups={statusGroups}
+                statusLabels={statusLabels}
+                users={users}
+                onUpdate={handleUpdateTask}
+                onSelect={(t) => setModalTask(t)}
+                onQuickCreate={(status) => {
+                  setNewTaskStatus(status)
+                  setModalTask('new')
+                }}
+              />
+            </div>
+          </>
         )}
       </div>
 
