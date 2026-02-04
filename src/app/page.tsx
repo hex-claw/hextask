@@ -346,7 +346,7 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="px-4 pb-8 overflow-x-auto">
+      <div className="px-4 pb-8">
         {loading ? (
           <div className="glass p-8 text-center text-gray-400 max-w-7xl mx-auto">
             Loading tasks...
@@ -372,7 +372,8 @@ export default function Home() {
           </div>
         ) : (
           /* Board View */
-          <div className="flex gap-4 min-h-[calc(100vh-220px)] pb-4 mx-auto">
+          <div className="flex justify-center overflow-x-auto">
+            <div className="flex gap-4 min-h-[calc(100vh-220px)] pb-4">
             {(Object.keys(statusGroups) as Task['status'][]).map((status) => (
               <div key={status} className="glass p-4 w-[280px] flex-shrink-0 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
@@ -406,6 +407,7 @@ export default function Home() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         )}
       </div>
