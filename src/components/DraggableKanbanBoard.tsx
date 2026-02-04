@@ -13,7 +13,8 @@ import {
   useSensors,
   closestCorners,
   DragOverEvent,
-  UniqueIdentifier
+  UniqueIdentifier,
+  useDroppable
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -207,11 +208,14 @@ function DroppableColumn({
   isExpanded,
   onToggleExpand,
 }: DroppableColumnProps) {
-  const { setNodeRef } = useSortable({ id: status })
+  const { setNodeRef } = useDroppable({ id: status })
   const INITIAL_LOAD = 10
   const visibleTasks = isExpanded || tasks.length <= INITIAL_LOAD ? tasks : tasks.slice(0, INITIAL_LOAD)
   const hasMore = tasks.length > INITIAL_LOAD
-  const taskIds = tasks.map(t => t.id)
+  const taskIds = visibleTasks.map(t => t.id)
+  
+  // Check if we're dragging over this column (but not over a specific task)
+  const isDraggingOverColumn = isOver && !visibleTasks.some(t => overId === t.id)
 
   return (
     <div
@@ -236,9 +240,9 @@ function DroppableColumn({
       
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1 overflow-y-auto">
-          {/* Drop indicator at top when hovering over column (always show if hovering) */}
-          {isOver && visibleTasks.length > 0 && !visibleTasks.some(t => overId === t.id) && (
-            <div className="h-0.5 bg-purple-500 rounded-full mb-1" />
+          {/* Drop indicator at top when dragging over column (not over specific task) */}
+          {isDraggingOverColumn && visibleTasks.length > 0 && (
+            <div className="h-1 bg-purple-500 rounded-full mb-1.5 shadow-lg shadow-purple-500/50" />
           )}
           
           {visibleTasks.map((task, index) => (
@@ -254,6 +258,11 @@ function DroppableColumn({
             />
           ))}
           
+          {/* Drop indicator at bottom when dragging over column */}
+          {isDraggingOverColumn && visibleTasks.length > 0 && (
+            <div className="h-1 bg-purple-500 rounded-full mt-1.5 shadow-lg shadow-purple-500/50" />
+          )}
+          
           {/* Load more button */}
           {hasMore && !isExpanded && (
             <button
@@ -264,11 +273,19 @@ function DroppableColumn({
             </button>
           )}
           
+          {/* Empty state with prominent drop indicator */}
           {tasks.length === 0 && (
-            <div className={`text-center py-8 text-gray-600 text-sm border-2 border-dashed rounded-lg transition-all ${
-              isOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/10'
+            <div className={`text-center py-12 text-gray-600 text-sm border-2 border-dashed rounded-lg transition-all ${
+              isOver ? 'border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/50' : 'border-white/10'
             }`}>
-              {isOver ? 'Drop here' : 'No tasks'}
+              {isOver ? (
+                <div className="space-y-2">
+                  <div className="h-1 w-16 bg-purple-500 rounded-full mx-auto shadow-lg shadow-purple-500/50" />
+                  <div className="font-medium text-purple-400">Drop here</div>
+                </div>
+              ) : (
+                'No tasks'
+              )}
             </div>
           )}
           
@@ -317,9 +334,9 @@ function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent, onDel
 
   return (
     <div className="relative">
-      {/* Drop indicator line */}
+      {/* Drop indicator line above task */}
       {isOverFromParent && (
-        <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-purple-500 rounded-full z-10" />
+        <div className="absolute -top-2 left-0 right-0 h-1 bg-purple-500 rounded-full z-10 shadow-lg shadow-purple-500/50" />
       )}
       
       <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
@@ -332,6 +349,11 @@ function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent, onDel
           onDuplicate={onDuplicate}
         />
       </div>
+      
+      {/* Drop indicator line below task (for last task in list) */}
+      {isOverFromParent && (
+        <div className="absolute -bottom-2 left-0 right-0 h-1 bg-purple-500 rounded-full z-10 shadow-lg shadow-purple-500/50" />
+      )}
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
 import { DraggableKanbanBoard } from '@/components/DraggableKanbanBoard'
 import { MobileKanban } from '@/components/MobileKanban'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { 
   Plus, 
   Search,
@@ -33,6 +34,10 @@ export default function Home() {
   const [newTaskStatus, setNewTaskStatus] = useState<Task['status'] | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [listViewLimit, setListViewLimit] = useState(20)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    type: 'delete' | 'duplicate'
+    task: Task | string
+  } | null>(null)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [filterAssignee, setFilterAssignee] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -178,7 +183,17 @@ export default function Home() {
     }
   }
 
-  // Delete task
+  // Request delete confirmation
+  const requestDeleteTask = (id: string) => {
+    setConfirmDialog({ type: 'delete', task: id })
+  }
+
+  // Request duplicate confirmation
+  const requestDuplicateTask = (task: Task) => {
+    setConfirmDialog({ type: 'duplicate', task })
+  }
+
+  // Actually delete task (after confirmation)
   const handleDeleteTask = async (id: string) => {
     setError(null)
     
@@ -195,8 +210,10 @@ export default function Home() {
     
     fetchData()
     setModalTask(null)
+    setConfirmDialog(null)
   }
 
+  // Actually duplicate task (after confirmation)
   const handleDuplicateTask = async (task: Task) => {
     setError(null)
     
@@ -219,6 +236,7 @@ export default function Home() {
     }
     
     fetchData()
+    setConfirmDialog(null)
   }
 
   // Update task (quick update from card)
@@ -414,8 +432,8 @@ export default function Home() {
                     users={users}
                     onUpdate={handleUpdateTask}
                     onSelect={(t) => setModalTask(t)}
-                    onDelete={handleDeleteTask}
-                    onDuplicate={handleDuplicateTask}
+                    onDelete={requestDeleteTask}
+                    onDuplicate={requestDuplicateTask}
                   />
                 ))}
                 
@@ -444,8 +462,8 @@ export default function Home() {
                 users={users}
                 onUpdate={handleUpdateTask}
                 onSelect={(t) => setModalTask(t)}
-                onDelete={handleDeleteTask}
-                onDuplicate={handleDuplicateTask}
+                onDelete={requestDeleteTask}
+                onDuplicate={requestDuplicateTask}
               />
             </div>
 
@@ -461,8 +479,8 @@ export default function Home() {
                   setNewTaskStatus(status)
                   setModalTask('new')
                 }}
-                onDelete={handleDeleteTask}
-                onDuplicate={handleDuplicateTask}
+                onDelete={requestDeleteTask}
+                onDuplicate={requestDuplicateTask}
               />
             </div>
           </>
@@ -476,8 +494,30 @@ export default function Home() {
           users={users}
           onClose={() => { setModalTask(null); setNewTaskStatus(null); }}
           onSave={handleSaveTask}
-          onDelete={handleDeleteTask}
+          onDelete={requestDeleteTask}
           initialStatus={newTaskStatus}
+        />
+      )}
+
+      {/* Confirmation dialogs */}
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.type === 'delete' ? 'Delete Task?' : 'Duplicate Task?'}
+          message={
+            confirmDialog.type === 'delete'
+              ? 'Are you sure you want to delete this task? This action cannot be undone.'
+              : 'Create a copy of this task with the same properties?'
+          }
+          confirmText={confirmDialog.type === 'delete' ? 'Delete' : 'Duplicate'}
+          variant={confirmDialog.type === 'delete' ? 'danger' : 'default'}
+          onConfirm={() => {
+            if (confirmDialog.type === 'delete') {
+              handleDeleteTask(confirmDialog.task as string)
+            } else {
+              handleDuplicateTask(confirmDialog.task as Task)
+            }
+          }}
+          onCancel={() => setConfirmDialog(null)}
         />
       )}
     </main>
