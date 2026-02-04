@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Task, User, supabase } from '@/lib/supabase'
+import { getCurrentUser, signOut, onAuthStateChange } from '@/lib/auth'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
 import { 
@@ -19,41 +21,46 @@ type ViewMode = 'list' | 'board'
 type FilterStatus = Task['status'] | 'all'
 
 export default function Home() {
+  const router = useRouter()
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authChecked, setAuthChecked] = useState(false)
   const [modalTask, setModalTask] = useState<Task | null | 'new'>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [filterAssignee, setFilterAssignee] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // Load saved user from localStorage
+  // Check auth on mount
   useEffect(() => {
-    const savedUserId = localStorage.getItem('hextask_user_id')
-    if (savedUserId) {
-      fetchData(savedUserId)
-    } else {
-      fetchUsers()
-    }
+    checkAuth()
+    
+    const { data: { subscription } } = onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        router.push('/login')
+      } else if (event === 'SIGNED_IN') {
+        checkAuth()
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const fetchUsers = async () => {
-    const { data: usersData, error } = await supabase
-      .from('users')
-      .select('*')
-    
-    if (error) {
-      console.error('Error fetching users:', error)
-      setError('Failed to load users')
+  const checkAuth = async () => {
+    const user = await getCurrentUser()
+    if (!user) {
+      router.push('/login')
+      return
     }
-    if (usersData) setUsers(usersData)
-    setLoading(false)
+    setCurrentUser(user)
+    setAuthChecked(true)
+    fetchData()
   }
 
-  const fetchData = async (userId?: string) => {
+  const fetchData = async () => {
     setLoading(true)
     setError(null)
     
@@ -81,10 +88,6 @@ export default function Home() {
     
     if (usersData) {
       setUsers(usersData)
-      if (userId) {
-        const user = usersData.find(u => u.id === userId)
-        if (user) setCurrentUser(user)
-      }
     }
     
     if (tasksData) {
@@ -109,16 +112,9 @@ export default function Home() {
     setLoading(false)
   }
 
-  // Select user (simple auth)
-  const selectUser = (user: User) => {
-    localStorage.setItem('hextask_user_id', user.id)
-    setCurrentUser(user)
-    fetchData(user.id)
-  }
-
-  const logout = () => {
-    localStorage.removeItem('hextask_user_id')
-    setCurrentUser(null)
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login')
   }
 
   // Filter tasks
@@ -170,7 +166,7 @@ export default function Home() {
         }
       }
       
-      fetchData(currentUser?.id)
+      fetchData()
       setModalTask(null)
     } catch (err) {
       console.error('Unexpected error:', err)
@@ -193,7 +189,7 @@ export default function Home() {
       return
     }
     
-    fetchData(currentUser?.id)
+    fetchData()
     setModalTask(null)
   }
 
@@ -211,7 +207,7 @@ export default function Home() {
       return
     }
     
-    fetchData(currentUser?.id)
+    fetchData()
   }
 
   const statusLabels = {
@@ -222,42 +218,12 @@ export default function Home() {
     done: 'Done',
   }
 
-  // User selection screen
-  if (!currentUser && !loading) {
+  // Loading/auth check
+  if (!authChecked || loading) {
     return (
-      <main className="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div className="glass p-8 max-w-md w-full text-center">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-purple-600/30 rounded-2xl">
-              <Hexagon size={48} className="text-purple-400" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold mb-2">HexTask</h1>
-          <p className="text-gray-400 mb-8">Select your profile to continue</p>
-          
-          <div className="space-y-3">
-            {users.map((user) => (
-              <button
-                key={user.id}
-                onClick={() => selectUser(user)}
-                className="w-full p-4 glass hover:border-purple-500/50 transition-all flex items-center gap-4"
-              >
-                <div className={`p-3 rounded-full ${user.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
-                  {user.is_ai ? (
-                    <Bot size={24} className="text-purple-400" />
-                  ) : (
-                    <UserIcon size={24} className="text-blue-400" />
-                  )}
-                </div>
-                <div className="text-left">
-                  <div className="font-medium">{user.name}</div>
-                  <div className="text-sm text-gray-400">
-                    {user.is_ai ? 'AI Assistant' : 'Human'}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+      <main className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="glass p-8 text-center">
+          <div className="animate-pulse">Loading...</div>
         </div>
       </main>
     )
@@ -299,7 +265,7 @@ export default function Home() {
                     )}
                   </div>
                   <span className="text-sm">{currentUser.name}</span>
-                  <button onClick={logout} className="ml-2 text-gray-400 hover:text-white">
+                  <button onClick={handleLogout} className="ml-2 text-gray-400 hover:text-white">
                     <LogOut size={14} />
                   </button>
                 </div>
