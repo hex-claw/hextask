@@ -12,13 +12,14 @@ interface TaskModalProps {
   onSave: (task: Partial<Task>) => void
   onDelete: (id: string) => void
   parentId?: string | null
+  initialStatus?: Task['status'] | null
 }
 
-export function TaskModal({ task, users, onClose, onSave, onDelete, parentId }: TaskModalProps) {
+export function TaskModal({ task, users, onClose, onSave, onDelete, parentId, initialStatus }: TaskModalProps) {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    status: 'backlog' as Task['status'],
+    status: (initialStatus || 'backlog') as Task['status'],
     priority: 'medium' as Task['priority'],
     assignee_id: null as string | null,
     due_date: null as string | null,

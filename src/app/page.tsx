@@ -29,6 +29,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [modalTask, setModalTask] = useState<Task | null | 'new'>(null)
+  const [newTaskStatus, setNewTaskStatus] = useState<Task['status'] | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [filterAssignee, setFilterAssignee] = useState<string | 'all'>('all')
@@ -422,6 +423,19 @@ export default function Home() {
                       No tasks
                     </div>
                   )}
+                  
+                  {/* Quick create button */}
+                  <button
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setNewTaskStatus(status);
+                      setModalTask('new');
+                    }}
+                    className="mt-2 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add task
+                  </button>
                 </div>
               </div>
             ))}
@@ -435,9 +449,10 @@ export default function Home() {
         <TaskModal
           task={modalTask === 'new' ? null : modalTask}
           users={users}
-          onClose={() => setModalTask(null)}
+          onClose={() => { setModalTask(null); setNewTaskStatus(null); }}
           onSave={handleSaveTask}
           onDelete={handleDeleteTask}
+          initialStatus={newTaskStatus}
         />
       )}
     </main>
