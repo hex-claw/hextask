@@ -208,7 +208,12 @@ function DroppableColumn({
   isExpanded,
   onToggleExpand,
 }: DroppableColumnProps) {
-  const { setNodeRef, isOver: isOverDroppable } = useDroppable({ id: status })
+  const { setNodeRef, isOver: isOverDroppable } = useDroppable({ 
+    id: status,
+    data: {
+      status: status
+    }
+  })
   const INITIAL_LOAD = 10
   const visibleTasks = isExpanded || tasks.length <= INITIAL_LOAD ? tasks : tasks.slice(0, INITIAL_LOAD)
   const hasMore = tasks.length > INITIAL_LOAD
@@ -217,7 +222,7 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all duration-200 ${
+      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col min-h-[400px] transition-all duration-200 ${
         isOverDroppable ? 'scale-105 ring-4 ring-purple-500 bg-purple-500/20 shadow-2xl shadow-purple-500/50' : ''
       }`}
     >
@@ -235,33 +240,35 @@ function DroppableColumn({
         <span className="text-sm text-gray-500 bg-white/5 px-2 py-0.5 rounded">{tasks.length}</span>
       </div>
       
-      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3 flex-1 overflow-y-auto">
-          {visibleTasks.length === 0 && (
-            <div className="text-center py-12 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
+      <SortableContext items={taskIds.length > 0 ? taskIds : ['placeholder']} strategy={verticalListSortingStrategy}>
+        <div className="space-y-3 flex-1 overflow-y-auto min-h-[300px]">
+          {visibleTasks.length === 0 ? (
+            <div className="flex items-center justify-center h-full min-h-[300px] text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
               No tasks
             </div>
-          )}
-          
-          {visibleTasks.map((task) => (
-            <SortableTask
-              key={task.id}
-              task={task}
-              users={users}
-              onUpdate={onUpdate}
-              onSelect={onSelect}
-              onDelete={onDelete}
-              onDuplicate={onDuplicate}
-            />
-          ))}
-          
-          {hasMore && !isExpanded && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
-              className="w-full p-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10"
-            >
-              Load more ({tasks.length - INITIAL_LOAD} hidden)
-            </button>
+          ) : (
+            <>
+              {visibleTasks.map((task) => (
+                <SortableTask
+                  key={task.id}
+                  task={task}
+                  users={users}
+                  onUpdate={onUpdate}
+                  onSelect={onSelect}
+                  onDelete={onDelete}
+                  onDuplicate={onDuplicate}
+                />
+              ))}
+              
+              {hasMore && !isExpanded && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
+                  className="w-full p-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10"
+                >
+                  Load more ({tasks.length - INITIAL_LOAD} hidden)
+                </button>
+              )}
+            </>
           )}
           
           {/* Quick create button */}
