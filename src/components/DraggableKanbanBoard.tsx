@@ -218,9 +218,9 @@ function DroppableColumn({
       
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1 overflow-y-auto">
-          {/* Drop indicator at top when hovering over column */}
-          {isOver && tasks.length > 0 && (
-            <div className="h-0.5 bg-purple-500 rounded-full -mb-1.5" />
+          {/* Drop indicator at top when hovering over column (always show if hovering) */}
+          {isOver && tasks.length > 0 && !tasks.some(t => overId === t.id) && (
+            <div className="h-0.5 bg-purple-500 rounded-full mb-1" />
           )}
           
           {tasks.map((task, index) => (
@@ -237,7 +237,7 @@ function DroppableColumn({
           ))}
           
           {tasks.length === 0 && (
-            <div className={`text-center py-8 text-gray-600 text-sm border border-dashed rounded-lg transition-all ${
+            <div className={`text-center py-8 text-gray-600 text-sm border-2 border-dashed rounded-lg transition-all ${
               isOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/10'
             }`}>
               {isOver ? 'Drop here' : 'No tasks'}
