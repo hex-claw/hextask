@@ -265,7 +265,14 @@ export default function DocumentsPage() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm sm:text-base font-medium mb-1">{doc.name}</h3>
+                    <a 
+                      href={`https://ffsgkiozmvkyirrrzofx.supabase.co/storage/v1/object/public/documents/${doc.file_path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-purple-400 transition-colors block"
+                    >
+                      <h3 className="text-sm sm:text-base font-medium mb-1">{doc.name}</h3>
+                    </a>
                     {doc.description && (
                       <p className="text-xs sm:text-sm text-gray-400 mb-2">{doc.description}</p>
                     )}
@@ -288,7 +295,7 @@ export default function DocumentsPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <a
-                      href={doc.file_path}
+                      href={`https://ffsgkiozmvkyirrrzofx.supabase.co/storage/v1/object/public/documents/${doc.file_path}`}
                       download={doc.file_name}
                       target="_blank"
                       rel="noopener noreferrer"
