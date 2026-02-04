@@ -12,7 +12,12 @@ import {
   Bot,
   User as UserIcon,
   ChevronDown,
-  Clock
+  Clock,
+  MoreVertical,
+  Edit,
+  Eye,
+  Copy,
+  Trash2
 } from 'lucide-react'
 
 const priorityConfig = {
@@ -27,6 +32,8 @@ interface BoardCardProps {
   users: User[]
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
+  onDelete?: (id: string) => void
+  onDuplicate?: (task: Task) => void
 }
 
 function DropdownBadge({ 
@@ -87,8 +94,8 @@ function Dropdown({
   )
 }
 
-export function BoardCard({ task, users, onUpdate, onSelect }: BoardCardProps) {
-  const [openDropdown, setOpenDropdown] = useState<'priority' | 'assignee' | 'due' | null>(null)
+export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplicate }: BoardCardProps) {
+  const [openDropdown, setOpenDropdown] = useState<'priority' | 'assignee' | 'due' | 'menu' | null>(null)
   const priority = priorityConfig[task.priority]
   const PriorityIcon = priority.icon
   const assignee = users.find(u => u.id === task.assignee_id)
@@ -122,10 +129,57 @@ export function BoardCard({ task, users, onUpdate, onSelect }: BoardCardProps) {
   return (
     <div
       onClick={() => onSelect(task)}
-      className="p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group"
+      className="p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative"
     >
+      {/* Quick Actions Menu */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'menu' ? null : 'menu') }}
+          className="p-1 hover:bg-white/20 rounded transition-colors"
+        >
+          <MoreVertical size={16} className="text-gray-400" />
+        </button>
+        <Dropdown isOpen={openDropdown === 'menu'} onClose={() => setOpenDropdown(null)}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onSelect(task); setOpenDropdown(null) }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+          >
+            <Eye size={12} />
+            View
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onSelect(task); setOpenDropdown(null) }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+          >
+            <Edit size={12} />
+            Edit
+          </button>
+          {onDuplicate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate(task); setOpenDropdown(null) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+            >
+              <Copy size={12} />
+              Duplicate
+            </button>
+          )}
+          {onDelete && (
+            <>
+              <div className="border-t border-white/10 my-1" />
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(task.id); setOpenDropdown(null) }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-500/20 text-red-400"
+              >
+                <Trash2 size={12} />
+                Delete
+              </button>
+            </>
+          )}
+        </Dropdown>
+      </div>
+
       {/* Title */}
-      <h4 className="font-medium text-sm mb-3 group-hover:text-purple-300 transition-colors">
+      <h4 className="font-medium text-sm mb-3 group-hover:text-purple-300 transition-colors pr-6">
         {task.title}
       </h4>
 

@@ -15,6 +15,8 @@ interface MobileKanbanProps {
   users: User[]
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
+  onDelete?: (id: string) => void
+  onDuplicate?: (task: Task) => void
 }
 
 export function MobileKanban({
@@ -22,7 +24,9 @@ export function MobileKanban({
   statusLabels,
   users,
   onUpdate,
-  onSelect
+  onSelect,
+  onDelete,
+  onDuplicate
 }: MobileKanbanProps) {
   const [collapsed, setCollapsed] = useState<{ [K in Task['status']]?: boolean }>({
     done: true // Collapse done by default
@@ -81,6 +85,8 @@ export function MobileKanban({
                       users={users}
                       onUpdate={onUpdate}
                       onSelect={onSelect}
+                      onDelete={onDelete}
+                      onDuplicate={onDuplicate}
                     />
                   ))
                 )}

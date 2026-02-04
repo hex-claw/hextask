@@ -11,7 +11,12 @@ import {
   Minus,
   ArrowDown,
   User as UserIcon,
-  Bot
+  Bot,
+  MoreVertical,
+  Edit,
+  Eye,
+  Copy,
+  Trash2
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -35,11 +40,14 @@ interface TaskCardProps {
   users: User[]
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
+  onDelete?: (id: string) => void
+  onDuplicate?: (task: Task) => void
   depth?: number
 }
 
-export function TaskCard({ task, users, onUpdate, onSelect, depth = 0 }: TaskCardProps) {
+export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicate, depth = 0 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(true)
+  const [showMenu, setShowMenu] = useState(false)
   const priority = priorityConfig[task.priority]
   const status = statusConfig[task.status]
   const PriorityIcon = priority.icon
@@ -49,9 +57,58 @@ export function TaskCard({ task, users, onUpdate, onSelect, depth = 0 }: TaskCar
   return (
     <div className={`${depth > 0 ? 'ml-6 border-l border-purple-500/30 pl-4' : ''}`}>
       <div 
-        className="glass p-4 mb-2 hover:border-purple-500/50 transition-all cursor-pointer group"
+        className="glass p-4 mb-2 hover:border-purple-500/50 transition-all cursor-pointer group relative"
         onClick={() => onSelect(task)}
       >
+        {/* Quick Actions Menu */}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu) }}
+            className="p-1 hover:bg-white/20 rounded transition-colors"
+          >
+            <MoreVertical size={16} className="text-gray-400" />
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 mt-1 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[140px] z-50">
+              <button
+                onClick={(e) => { e.stopPropagation(); onSelect(task); setShowMenu(false) }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+              >
+                <Eye size={12} />
+                View
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onSelect(task); setShowMenu(false) }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+              >
+                <Edit size={12} />
+                Edit
+              </button>
+              {onDuplicate && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDuplicate(task); setShowMenu(false) }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+                >
+                  <Copy size={12} />
+                  Duplicate
+                </button>
+              )}
+              {onDelete && (
+                <>
+                  <div className="border-t border-white/10 my-1" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(task.id); setShowMenu(false) }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-500/20 text-red-400"
+                  >
+                    <Trash2 size={12} />
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="flex items-start gap-3">
           {/* Expand/Collapse for subtasks */}
           {hasSubtasks ? (

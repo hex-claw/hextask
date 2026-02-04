@@ -181,7 +181,7 @@ export default function Home() {
   const handleDeleteTask = async (id: string) => {
     setError(null)
     
-    const { error } = await supabase
+    const { error} = await supabase
       .from('tasks')
       .delete()
       .eq('id', id)
@@ -194,6 +194,30 @@ export default function Home() {
     
     fetchData()
     setModalTask(null)
+  }
+
+  const handleDuplicateTask = async (task: Task) => {
+    setError(null)
+    
+    const { error } = await supabase
+      .from('tasks')
+      .insert({
+        title: `${task.title} (copy)`,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        assignee_id: task.assignee_id,
+        due_date: task.due_date,
+        parent_id: task.parent_id
+      })
+    
+    if (error) {
+      console.error('Error duplicating task:', error)
+      setError(`Failed to duplicate task: ${error.message}`)
+      return
+    }
+    
+    fetchData()
   }
 
   // Update task (quick update from card)
@@ -388,6 +412,8 @@ export default function Home() {
                   users={users}
                   onUpdate={handleUpdateTask}
                   onSelect={(t) => setModalTask(t)}
+                  onDelete={handleDeleteTask}
+                  onDuplicate={handleDuplicateTask}
                 />
               ))
             )}
@@ -403,6 +429,8 @@ export default function Home() {
                 users={users}
                 onUpdate={handleUpdateTask}
                 onSelect={(t) => setModalTask(t)}
+                onDelete={handleDeleteTask}
+                onDuplicate={handleDuplicateTask}
               />
             </div>
 
@@ -418,6 +446,8 @@ export default function Home() {
                   setNewTaskStatus(status)
                   setModalTask('new')
                 }}
+                onDelete={handleDeleteTask}
+                onDuplicate={handleDuplicateTask}
               />
             </div>
           </>

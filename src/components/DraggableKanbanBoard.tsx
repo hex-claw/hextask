@@ -34,6 +34,8 @@ interface DraggableKanbanBoardProps {
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
   onQuickCreate: (status: Task['status']) => void
+  onDelete?: (id: string) => void
+  onDuplicate?: (task: Task) => void
 }
 
 export function DraggableKanbanBoard({
@@ -42,7 +44,9 @@ export function DraggableKanbanBoard({
   users,
   onUpdate,
   onSelect,
-  onQuickCreate
+  onQuickCreate,
+  onDelete,
+  onDuplicate
 }: DraggableKanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null)
@@ -138,6 +142,8 @@ export function DraggableKanbanBoard({
               onQuickCreate={onQuickCreate}
               isOver={overId === status}
               overId={overId}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
             />
           ))}
         </div>
@@ -169,6 +175,8 @@ interface DroppableColumnProps {
   onQuickCreate: (status: Task['status']) => void
   isOver: boolean
   overId: UniqueIdentifier | null
+  onDelete?: (id: string) => void
+  onDuplicate?: (task: Task) => void
 }
 
 function DroppableColumn({
@@ -181,6 +189,8 @@ function DroppableColumn({
   onQuickCreate,
   isOver,
   overId,
+  onDelete,
+  onDuplicate,
 }: DroppableColumnProps) {
   const { setNodeRef } = useSortable({ id: status })
   const taskIds = tasks.map(t => t.id)
@@ -221,6 +231,8 @@ function DroppableColumn({
               onUpdate={onUpdate}
               onSelect={onSelect}
               isOverFromParent={overId === task.id}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
             />
           ))}
           
@@ -255,9 +267,11 @@ interface SortableTaskProps {
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
   isOverFromParent: boolean
+  onDelete?: (id: string) => void
+  onDuplicate?: (task: Task) => void
 }
 
-function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent }: SortableTaskProps) {
+function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent, onDelete, onDuplicate }: SortableTaskProps) {
   const {
     attributes,
     listeners,
@@ -286,6 +300,8 @@ function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent }: Sor
           users={users}
           onUpdate={onUpdate}
           onSelect={onSelect}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
         />
       </div>
     </div>
