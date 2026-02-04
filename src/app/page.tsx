@@ -6,6 +6,7 @@ import { Task, User, supabase } from '@/lib/supabase'
 import { getCurrentUser, signOut, onAuthStateChange } from '@/lib/auth'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
+import { BoardCard } from '@/components/BoardCard'
 import { 
   Plus, 
   Search,
@@ -371,33 +372,37 @@ export default function Home() {
           </div>
         ) : (
           /* Board View */
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-5 gap-4 overflow-x-auto">
             {(Object.keys(statusGroups) as Task['status'][]).map((status) => (
-              <div key={status} className="glass p-4">
+              <div key={status} className="glass p-4 min-w-[280px]">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-medium text-gray-300">{statusLabels[status]}</h3>
-                  <span className="text-sm text-gray-500">{statusGroups[status].length}</span>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      status === 'backlog' ? 'bg-gray-400' :
+                      status === 'todo' ? 'bg-blue-400' :
+                      status === 'in_progress' ? 'bg-purple-400' :
+                      status === 'review' ? 'bg-yellow-400' :
+                      'bg-green-400'
+                    }`} />
+                    <h3 className="font-medium text-gray-300">{statusLabels[status]}</h3>
+                  </div>
+                  <span className="text-sm text-gray-500 bg-white/5 px-2 py-0.5 rounded">{statusGroups[status].length}</span>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {statusGroups[status].map((task) => (
-                    <div
+                    <BoardCard
                       key={task.id}
-                      onClick={() => setModalTask(task)}
-                      className="p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5"
-                    >
-                      <h4 className="font-medium text-sm">{task.title}</h4>
-                      {task.assignee_id && (
-                        <div className="mt-2 flex items-center gap-1 text-xs text-gray-400">
-                          {users.find(u => u.id === task.assignee_id)?.is_ai ? (
-                            <Bot size={12} />
-                          ) : (
-                            <UserIcon size={12} />
-                          )}
-                          {users.find(u => u.id === task.assignee_id)?.name}
-                        </div>
-                      )}
-                    </div>
+                      task={task}
+                      users={users}
+                      onUpdate={handleUpdateTask}
+                      onSelect={(t) => setModalTask(t)}
+                    />
                   ))}
+                  {statusGroups[status].length === 0 && (
+                    <div className="text-center py-8 text-gray-600 text-sm border border-dashed border-white/10 rounded-lg">
+                      No tasks
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
