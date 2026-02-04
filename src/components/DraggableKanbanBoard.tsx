@@ -220,8 +220,8 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all ${
-        isOver ? 'ring-2 ring-purple-500 bg-purple-500/10' : ''
+      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all duration-200 ${
+        isOver ? 'scale-105 ring-4 ring-purple-500 bg-purple-500/20 shadow-2xl shadow-purple-500/50' : ''
       }`}
     >
       <div className="flex items-center justify-between mb-4">
@@ -240,36 +240,24 @@ function DroppableColumn({
       
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1 overflow-y-auto">
-          {/* Empty state with prominent drop indicator */}
           {visibleTasks.length === 0 && (
-            <div className={`text-center py-12 text-gray-600 text-sm border-2 border-dashed rounded-lg transition-all ${
-              isOver ? 'border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/50 scale-105' : 'border-white/10'
-            }`}>
-              {isOver ? (
-                <div className="space-y-3">
-                  <div className="h-1.5 w-20 bg-purple-500 rounded-full mx-auto shadow-lg shadow-purple-500/50 animate-pulse" />
-                  <div className="font-medium text-purple-400 text-base">Drop task here</div>
-                </div>
-              ) : (
-                'No tasks'
-              )}
+            <div className="text-center py-12 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
+              No tasks
             </div>
           )}
           
-          {visibleTasks.map((task, index) => (
+          {visibleTasks.map((task) => (
             <SortableTask
               key={task.id}
               task={task}
               users={users}
               onUpdate={onUpdate}
               onSelect={onSelect}
-              isOverFromParent={overId === task.id}
               onDelete={onDelete}
               onDuplicate={onDuplicate}
             />
           ))}
           
-          {/* Load more button */}
           {hasMore && !isExpanded && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
@@ -301,12 +289,11 @@ interface SortableTaskProps {
   users: User[]
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
-  isOverFromParent: boolean
   onDelete?: (id: string) => void
   onDuplicate?: (task: Task) => void
 }
 
-function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent, onDelete, onDuplicate }: SortableTaskProps) {
+function SortableTask({ task, users, onUpdate, onSelect, onDelete, onDuplicate }: SortableTaskProps) {
   const {
     attributes,
     listeners,
@@ -323,22 +310,15 @@ function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent, onDel
   }
 
   return (
-    <div className="relative">
-      {/* Drop indicator line - ONLY above the task being hovered */}
-      {isOverFromParent && (
-        <div className="absolute -top-2 left-0 right-0 h-1 bg-purple-500 rounded-full z-10 shadow-lg shadow-purple-500/50" />
-      )}
-      
-      <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-        <BoardCard
-          task={task}
-          users={users}
-          onUpdate={onUpdate}
-          onSelect={onSelect}
-          onDelete={onDelete}
-          onDuplicate={onDuplicate}
-        />
-      </div>
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      <BoardCard
+        task={task}
+        users={users}
+        onUpdate={onUpdate}
+        onSelect={onSelect}
+        onDelete={onDelete}
+        onDuplicate={onDuplicate}
+      />
     </div>
   )
 }
