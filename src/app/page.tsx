@@ -6,7 +6,7 @@ import { Task, User, supabase } from '@/lib/supabase'
 import { getCurrentUser, signOut, onAuthStateChange } from '@/lib/auth'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
-import { BoardCard } from '@/components/BoardCard'
+import { DraggableKanbanBoard } from '@/components/DraggableKanbanBoard'
 import { 
   Plus, 
   Search,
@@ -391,56 +391,17 @@ export default function Home() {
           </div>
         ) : (
           /* Board View */
-          <div className="flex justify-center overflow-x-auto">
-            <div className="flex gap-4 min-h-[calc(100vh-220px)] pb-4">
-            {(Object.keys(statusGroups) as Task['status'][]).map((status) => (
-              <div key={status} className="glass p-4 w-[280px] flex-shrink-0 flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      status === 'backlog' ? 'bg-gray-400' :
-                      status === 'todo' ? 'bg-blue-400' :
-                      status === 'in_progress' ? 'bg-purple-400' :
-                      status === 'review' ? 'bg-yellow-400' :
-                      'bg-green-400'
-                    }`} />
-                    <h3 className="font-medium text-gray-300">{statusLabels[status]}</h3>
-                  </div>
-                  <span className="text-sm text-gray-500 bg-white/5 px-2 py-0.5 rounded">{statusGroups[status].length}</span>
-                </div>
-                <div className="space-y-3 flex-1 overflow-y-auto">
-                  {statusGroups[status].map((task) => (
-                    <BoardCard
-                      key={task.id}
-                      task={task}
-                      users={users}
-                      onUpdate={handleUpdateTask}
-                      onSelect={(t) => setModalTask(t)}
-                    />
-                  ))}
-                  {statusGroups[status].length === 0 && (
-                    <div className="text-center py-8 text-gray-600 text-sm border border-dashed border-white/10 rounded-lg">
-                      No tasks
-                    </div>
-                  )}
-                  
-                  {/* Quick create button */}
-                  <button
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      setNewTaskStatus(status);
-                      setModalTask('new');
-                    }}
-                    className="mt-2 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <Plus size={16} />
-                    Add task
-                  </button>
-                </div>
-              </div>
-            ))}
-            </div>
-          </div>
+          <DraggableKanbanBoard
+            statusGroups={statusGroups}
+            statusLabels={statusLabels}
+            users={users}
+            onUpdate={handleUpdateTask}
+            onSelect={(t) => setModalTask(t)}
+            onQuickCreate={(status) => {
+              setNewTaskStatus(status)
+              setModalTask('new')
+            }}
+          />
         )}
       </div>
 
