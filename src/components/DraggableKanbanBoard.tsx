@@ -11,17 +11,12 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  rectIntersection,
   DragOverEvent,
   UniqueIdentifier,
-  useDroppable
+  useDroppable,
+  useDraggable
 } from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
 
 type StatusGroups = {
@@ -75,7 +70,27 @@ export function DraggableKanbanBoard({
 
   const handleDragOver = (event: DragOverEvent) => {
     const { over } = event
-    setOverId(over?.id || null)
+    if (!over) {
+      setOverId(null)
+      return
+    }
+    
+    // If over a column directly, use that
+    const statusValues = Object.keys(statusGroups) as Task['status'][]
+    if (statusValues.includes(over.id as Task['status'])) {
+      setOverId(over.id)
+      return
+    }
+    
+    // If over a task, find which column it belongs to and highlight that column
+    for (const status of statusValues) {
+      if (statusGroups[status].find(t => t.id === over.id)) {
+        setOverId(status)
+        return
+      }
+    }
+    
+    setOverId(null)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -124,7 +139,7 @@ export function DraggableKanbanBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={rectIntersection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -217,7 +232,6 @@ function DroppableColumn({
   const INITIAL_LOAD = 10
   const visibleTasks = isExpanded || tasks.length <= INITIAL_LOAD ? tasks : tasks.slice(0, INITIAL_LOAD)
   const hasMore = tasks.length > INITIAL_LOAD
-  const taskIds = visibleTasks.map(t => t.id)
 
   return (
     <div
@@ -226,7 +240,7 @@ function DroppableColumn({
         isOverDroppable ? 'scale-[1.02] ring-2 ring-purple-400 bg-purple-500/10 shadow-lg shadow-purple-500/30' : ''
       }`}
     >
-      <div className="flex items-center justify-between mb-4 pointer-events-none">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${
             status === 'backlog' ? 'bg-gray-400' :
@@ -240,39 +254,36 @@ function DroppableColumn({
         <span className="text-sm text-gray-500 bg-white/5 px-2 py-0.5 rounded">{tasks.length}</span>
       </div>
       
-      <SortableContext items={taskIds.length > 0 ? taskIds : ['placeholder']} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pointer-events-none">
-          {visibleTasks.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
-              No tasks
-            </div>
-          ) : (
-            <>
-              {visibleTasks.map((task) => (
-                <div key={task.id} className="pointer-events-auto">
-                  <SortableTask
-                    task={task}
-                    users={users}
-                    onUpdate={onUpdate}
-                    onSelect={onSelect}
-                    onDelete={onDelete}
-                    onDuplicate={onDuplicate}
-                  />
-                </div>
-              ))}
-              
-              {hasMore && !isExpanded && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
-                  className="w-full p-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10 pointer-events-auto"
-                >
-                  Load more ({tasks.length - INITIAL_LOAD} hidden)
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </SortableContext>
+      <div className="space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-340px)]">
+        {visibleTasks.length === 0 ? (
+          <div className="flex items-center justify-center h-32 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
+            No tasks
+          </div>
+        ) : (
+          <>
+            {visibleTasks.map((task) => (
+              <DraggableTask
+                key={task.id}
+                task={task}
+                users={users}
+                onUpdate={onUpdate}
+                onSelect={onSelect}
+                onDelete={onDelete}
+                onDuplicate={onDuplicate}
+              />
+            ))}
+            
+            {hasMore && !isExpanded && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
+                className="w-full p-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10"
+              >
+                Load more ({tasks.length - INITIAL_LOAD} hidden)
+              </button>
+            )}
+          </>
+        )}
+      </div>
       
       {/* Quick create button - outside scrollable area */}
       <button
@@ -280,7 +291,7 @@ function DroppableColumn({
           e.stopPropagation()
           onQuickCreate(status)
         }}
-        className="mt-3 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2 flex-shrink-0 pointer-events-auto"
+        className="mt-3 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2 flex-shrink-0"
       >
         <Plus size={16} />
         Add task
@@ -289,7 +300,7 @@ function DroppableColumn({
   )
 }
 
-interface SortableTaskProps {
+interface DraggableTaskProps {
   task: Task
   users: User[]
   onUpdate: (task: Partial<Task> & { id: string }) => void
@@ -298,21 +309,19 @@ interface SortableTaskProps {
   onDuplicate?: (task: Task) => void
 }
 
-function SortableTask({ task, users, onUpdate, onSelect, onDelete, onDuplicate }: SortableTaskProps) {
+function DraggableTask({ task, users, onUpdate, onSelect, onDelete, onDuplicate }: DraggableTaskProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
-    transition,
     isDragging
-  } = useSortable({ id: task.id })
+  } = useDraggable({ id: task.id })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
     opacity: isDragging ? 0.5 : 1,
-  }
+  } : undefined
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
