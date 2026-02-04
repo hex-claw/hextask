@@ -289,7 +289,9 @@ export default function DocumentsPage() {
                   <div className="flex items-center gap-2">
                     <a
                       href={doc.file_path}
-                      download
+                      download={doc.file_name}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
                     >
                       <Download size={16} />

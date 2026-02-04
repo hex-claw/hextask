@@ -11,8 +11,16 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners
+  closestCorners,
+  DragOverEvent,
+  UniqueIdentifier
 } from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
 
 type StatusGroups = {
@@ -37,6 +45,7 @@ export function DraggableKanbanBoard({
   onQuickCreate
 }: DraggableKanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [overId, setOverId] = useState<UniqueIdentifier | null>(null)
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -58,18 +67,39 @@ export function DraggableKanbanBoard({
     }
   }
 
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over?.id || null)
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
+    
+    setOverId(null)
     
     if (!over || !activeTask) {
       setActiveTask(null)
       return
     }
 
-    const newStatus = over.id as Task['status']
+    // Check if we're over a column (status)
+    const statusValues = Object.keys(statusGroups) as Task['status'][]
+    let newStatus: Task['status'] | null = null
+    
+    if (statusValues.includes(over.id as Task['status'])) {
+      // Dropped directly on a column
+      newStatus = over.id as Task['status']
+    } else {
+      // Dropped on a task, find which column that task is in
+      for (const status of statusValues) {
+        if (statusGroups[status].find(t => t.id === over.id)) {
+          newStatus = status
+          break
+        }
+      }
+    }
     
     // If the status changed, update the task
-    if (activeTask.status !== newStatus) {
+    if (newStatus && activeTask.status !== newStatus) {
       onUpdate({
         id: activeTask.id,
         status: newStatus
@@ -81,6 +111,7 @@ export function DraggableKanbanBoard({
 
   const handleDragCancel = () => {
     setActiveTask(null)
+    setOverId(null)
   }
 
   return (
@@ -88,6 +119,7 @@ export function DraggableKanbanBoard({
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
@@ -103,7 +135,7 @@ export function DraggableKanbanBoard({
               onUpdate={onUpdate}
               onSelect={onSelect}
               onQuickCreate={onQuickCreate}
-              isOver={false}
+              isOver={overId === status}
             />
           ))}
         </div>
@@ -111,7 +143,7 @@ export function DraggableKanbanBoard({
       
       <DragOverlay>
         {activeTask ? (
-          <div className="opacity-50">
+          <div className="opacity-80 rotate-3 scale-105">
             <BoardCard
               task={activeTask}
               users={users}
@@ -144,13 +176,17 @@ function DroppableColumn({
   onUpdate,
   onSelect,
   onQuickCreate,
+  isOver,
 }: DroppableColumnProps) {
-  const { setNodeRef } = useDroppable({ id: status })
+  const { setNodeRef } = useSortable({ id: status })
+  const taskIds = tasks.map(t => t.id)
 
   return (
     <div
       ref={setNodeRef}
-      className="glass p-4 w-[280px] flex-shrink-0 flex flex-col"
+      className={`glass p-4 w-[280px] flex-shrink-0 flex flex-col transition-all ${
+        isOver ? 'ring-2 ring-purple-500 bg-purple-500/10' : ''
+      }`}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -166,66 +202,82 @@ function DroppableColumn({
         <span className="text-sm text-gray-500 bg-white/5 px-2 py-0.5 rounded">{tasks.length}</span>
       </div>
       
-      <div className="space-y-3 flex-1 overflow-y-auto">
-        {tasks.map((task) => (
-          <DraggableTask
-            key={task.id}
-            task={task}
-            users={users}
-            onUpdate={onUpdate}
-            onSelect={onSelect}
-          />
-        ))}
-        
-        {tasks.length === 0 && (
-          <div className="text-center py-8 text-gray-600 text-sm border border-dashed border-white/10 rounded-lg">
-            No tasks
-          </div>
-        )}
-        
-        {/* Quick create button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onQuickCreate(status)
-          }}
-          className="mt-2 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2"
-        >
-          <Plus size={16} />
-          Add task
-        </button>
-      </div>
+      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+        <div className="space-y-3 flex-1 overflow-y-auto">
+          {tasks.map((task) => (
+            <SortableTask
+              key={task.id}
+              task={task}
+              users={users}
+              onUpdate={onUpdate}
+              onSelect={onSelect}
+            />
+          ))}
+          
+          {tasks.length === 0 && (
+            <div className={`text-center py-8 text-gray-600 text-sm border border-dashed rounded-lg transition-all ${
+              isOver ? 'border-purple-500 bg-purple-500/10' : 'border-white/10'
+            }`}>
+              {isOver ? 'Drop here' : 'No tasks'}
+            </div>
+          )}
+          
+          {/* Quick create button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onQuickCreate(status)
+            }}
+            className="mt-2 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2"
+          >
+            <Plus size={16} />
+            Add task
+          </button>
+        </div>
+      </SortableContext>
     </div>
   )
 }
 
-import { useDraggable, useDroppable } from '@dnd-kit/core'
-
-interface DraggableTaskProps {
+interface SortableTaskProps {
   task: Task
   users: User[]
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
 }
 
-function DraggableTask({ task, users, onUpdate, onSelect }: DraggableTaskProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-  })
+function SortableTask({ task, users, onUpdate, onSelect }: SortableTaskProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver
+  } = useSortable({ id: task.id })
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
     opacity: isDragging ? 0.5 : 1,
-  } : undefined
+  }
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <BoardCard
-        task={task}
-        users={users}
-        onUpdate={onUpdate}
-        onSelect={onSelect}
-      />
+    <div className="relative">
+      {/* Drop indicator line */}
+      {isOver && (
+        <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-purple-500 rounded-full z-10" />
+      )}
+      
+      <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+        <BoardCard
+          task={task}
+          users={users}
+          onUpdate={onUpdate}
+          onSelect={onSelect}
+        />
+      </div>
     </div>
   )
 }
