@@ -348,12 +348,12 @@ export default function Home() {
       {/* Content */}
       <div className="px-4 pb-8 overflow-x-auto">
         {loading ? (
-          <div className="glass p-8 text-center text-gray-400">
+          <div className="glass p-8 text-center text-gray-400 max-w-7xl mx-auto">
             Loading tasks...
           </div>
         ) : viewMode === 'list' ? (
           /* List View */
-          <div className="space-y-2">
+          <div className="space-y-2 max-w-7xl mx-auto">
             {filteredTasks.length === 0 ? (
               <div className="glass p-8 text-center text-gray-400">
                 No tasks found. Create one to get started!
@@ -372,7 +372,7 @@ export default function Home() {
           </div>
         ) : (
           /* Board View */
-          <div className="flex gap-4 min-h-[calc(100vh-220px)] pb-4">
+          <div className="flex gap-4 min-h-[calc(100vh-220px)] pb-4 mx-auto">
             {(Object.keys(statusGroups) as Task['status'][]).map((status) => (
               <div key={status} className="glass p-4 w-[280px] flex-shrink-0 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
