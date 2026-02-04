@@ -223,10 +223,10 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all duration-200 ${
-        isOverDroppable ? 'scale-105 ring-4 ring-purple-500 bg-purple-500/20 shadow-2xl shadow-purple-500/50' : ''
+        isOverDroppable ? 'scale-[1.02] ring-2 ring-purple-400 bg-purple-500/10 shadow-lg shadow-purple-500/30' : ''
       }`}
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 pointer-events-none">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${
             status === 'backlog' ? 'bg-gray-400' :
@@ -241,7 +241,7 @@ function DroppableColumn({
       </div>
       
       <SortableContext items={taskIds.length > 0 ? taskIds : ['placeholder']} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-280px)]">
+        <div className="space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pointer-events-none">
           {visibleTasks.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
               No tasks
@@ -249,21 +249,22 @@ function DroppableColumn({
           ) : (
             <>
               {visibleTasks.map((task) => (
-                <SortableTask
-                  key={task.id}
-                  task={task}
-                  users={users}
-                  onUpdate={onUpdate}
-                  onSelect={onSelect}
-                  onDelete={onDelete}
-                  onDuplicate={onDuplicate}
-                />
+                <div key={task.id} className="pointer-events-auto">
+                  <SortableTask
+                    task={task}
+                    users={users}
+                    onUpdate={onUpdate}
+                    onSelect={onSelect}
+                    onDelete={onDelete}
+                    onDuplicate={onDuplicate}
+                  />
+                </div>
               ))}
               
               {hasMore && !isExpanded && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
-                  className="w-full p-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10"
+                  className="w-full p-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all border border-white/10 pointer-events-auto"
                 >
                   Load more ({tasks.length - INITIAL_LOAD} hidden)
                 </button>
@@ -279,7 +280,7 @@ function DroppableColumn({
           e.stopPropagation()
           onQuickCreate(status)
         }}
-        className="mt-3 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2 flex-shrink-0"
+        className="mt-3 w-full p-3 text-sm text-gray-400 hover:text-white border border-dashed border-white/10 hover:border-purple-500/50 rounded-lg transition-all flex items-center justify-center gap-2 flex-shrink-0 pointer-events-auto"
       >
         <Plus size={16} />
         Add task
