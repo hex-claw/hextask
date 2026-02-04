@@ -243,16 +243,16 @@ export default function Home() {
 
       {/* Header */}
       <header className="glass border-b border-white/10 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-600/30 rounded-lg">
-                  <Hexagon size={24} className="text-purple-400" />
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-6 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-purple-600/30 rounded-lg">
+                  <Hexagon size={20} className="text-purple-400 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold">HexTask</h1>
-                  <p className="text-sm text-gray-400">J + Hex Co-working</p>
+                <div className="min-w-0">
+                  <h1 className="text-lg sm:text-xl font-bold">HexTask</h1>
+                  <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">J + Hex Co-working</p>
                 </div>
               </div>
 
@@ -260,23 +260,23 @@ export default function Home() {
               <nav className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
                 <a
                   href="/"
-                  className="px-4 py-2 rounded-md text-sm font-medium bg-purple-600 text-white"
+                  className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-purple-600 text-white"
                 >
                   Tasks
                 </a>
                 <a
                   href="/documents"
-                  className="px-4 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
                 >
-                  Documents
+                  Docs
                 </a>
               </nav>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
               {/* Current user indicator */}
               {currentUser && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
                   <div className={`p-1 rounded-full ${currentUser.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
                     {currentUser.is_ai ? (
                       <Bot size={14} className="text-purple-400" />
@@ -293,10 +293,10 @@ export default function Home() {
 
               <button
                 onClick={() => setModalTask('new')}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors text-sm"
               >
-                <Plus size={20} />
-                New Task
+                <Plus size={18} className="sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">New Task</span>
               </button>
             </div>
           </div>
@@ -304,17 +304,17 @@ export default function Home() {
       </header>
 
       {/* Toolbar */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="glass p-4 flex flex-wrap items-center gap-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
+        <div className="glass p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-4">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
+            <Search size={16} className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search tasks..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+              className="w-full pl-8 sm:pl-10 pr-2 sm:pr-4 py-1.5 sm:py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
             />
           </div>
 
@@ -322,7 +322,7 @@ export default function Home() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+            className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
           >
             <option value="all">All Status</option>
             <option value="backlog">Backlog</option>
@@ -336,9 +336,9 @@ export default function Home() {
           <select
             value={filterAssignee}
             onChange={(e) => setFilterAssignee(e.target.value)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+            className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
           >
-            <option value="all">All Assignees</option>
+            <option value="all">All</option>
             {users.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.is_ai ? '🤖' : '👤'} {user.name}
@@ -350,15 +350,17 @@ export default function Home() {
           <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded ${viewMode === 'list' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+              className={`p-1.5 sm:p-2 rounded ${viewMode === 'list' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+              title="List view"
             >
-              <List size={18} />
+              <List size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             <button
               onClick={() => setViewMode('board')}
-              className={`p-2 rounded ${viewMode === 'board' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+              className={`p-1.5 sm:p-2 rounded ${viewMode === 'board' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+              title="Board view"
             >
-              <LayoutGrid size={18} />
+              <LayoutGrid size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
           </div>
         </div>

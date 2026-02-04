@@ -123,8 +123,8 @@ export function DraggableKanbanBoard({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex justify-center overflow-x-auto">
-        <div className="flex gap-4 min-h-[calc(100vh-220px)] pb-4">
+      <div className="flex justify-center overflow-x-auto px-2 sm:px-0">
+        <div className="flex gap-3 sm:gap-4 min-h-[calc(100vh-220px)] pb-4">
           {(Object.keys(statusGroups) as Task['status'][]).map((status) => (
             <DroppableColumn
               key={status}
@@ -184,7 +184,7 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`glass p-4 w-[280px] flex-shrink-0 flex flex-col transition-all ${
+      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all ${
         isOver ? 'ring-2 ring-purple-500 bg-purple-500/10' : ''
       }`}
     >
