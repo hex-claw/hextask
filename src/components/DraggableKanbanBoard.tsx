@@ -136,6 +136,7 @@ export function DraggableKanbanBoard({
               onSelect={onSelect}
               onQuickCreate={onQuickCreate}
               isOver={overId === status}
+              overId={overId}
             />
           ))}
         </div>
@@ -166,6 +167,7 @@ interface DroppableColumnProps {
   onSelect: (task: Task) => void
   onQuickCreate: (status: Task['status']) => void
   isOver: boolean
+  overId: UniqueIdentifier | null
 }
 
 function DroppableColumn({
@@ -177,6 +179,7 @@ function DroppableColumn({
   onSelect,
   onQuickCreate,
   isOver,
+  overId,
 }: DroppableColumnProps) {
   const { setNodeRef } = useSortable({ id: status })
   const taskIds = tasks.map(t => t.id)
@@ -211,6 +214,7 @@ function DroppableColumn({
               users={users}
               onUpdate={onUpdate}
               onSelect={onSelect}
+              isOverFromParent={overId === task.id}
             />
           ))}
           
@@ -244,17 +248,17 @@ interface SortableTaskProps {
   users: User[]
   onUpdate: (task: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
+  isOverFromParent: boolean
 }
 
-function SortableTask({ task, users, onUpdate, onSelect }: SortableTaskProps) {
+function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent }: SortableTaskProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging,
-    isOver
+    isDragging
   } = useSortable({ id: task.id })
 
   const style = {
@@ -266,7 +270,7 @@ function SortableTask({ task, users, onUpdate, onSelect }: SortableTaskProps) {
   return (
     <div className="relative">
       {/* Drop indicator line */}
-      {isOver && (
+      {isOverFromParent && (
         <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-purple-500 rounded-full z-10" />
       )}
       
