@@ -240,9 +240,20 @@ function DroppableColumn({
       
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1 overflow-y-auto">
-          {/* Drop indicator at top when dragging over column (not over specific task) */}
-          {isDraggingOverColumn && visibleTasks.length > 0 && (
-            <div className="h-1 bg-purple-500 rounded-full mb-1.5 shadow-lg shadow-purple-500/50" />
+          {/* Empty state with prominent drop indicator */}
+          {visibleTasks.length === 0 && (
+            <div className={`text-center py-12 text-gray-600 text-sm border-2 border-dashed rounded-lg transition-all ${
+              isOver ? 'border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/50 scale-105' : 'border-white/10'
+            }`}>
+              {isOver ? (
+                <div className="space-y-3">
+                  <div className="h-1.5 w-20 bg-purple-500 rounded-full mx-auto shadow-lg shadow-purple-500/50 animate-pulse" />
+                  <div className="font-medium text-purple-400 text-base">Drop task here</div>
+                </div>
+              ) : (
+                'No tasks'
+              )}
+            </div>
           )}
           
           {visibleTasks.map((task, index) => (
@@ -258,11 +269,6 @@ function DroppableColumn({
             />
           ))}
           
-          {/* Drop indicator at bottom when dragging over column */}
-          {isDraggingOverColumn && visibleTasks.length > 0 && (
-            <div className="h-1 bg-purple-500 rounded-full mt-1.5 shadow-lg shadow-purple-500/50" />
-          )}
-          
           {/* Load more button */}
           {hasMore && !isExpanded && (
             <button
@@ -271,22 +277,6 @@ function DroppableColumn({
             >
               Load more ({tasks.length - INITIAL_LOAD} hidden)
             </button>
-          )}
-          
-          {/* Empty state with prominent drop indicator */}
-          {tasks.length === 0 && (
-            <div className={`text-center py-12 text-gray-600 text-sm border-2 border-dashed rounded-lg transition-all ${
-              isOver ? 'border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/50' : 'border-white/10'
-            }`}>
-              {isOver ? (
-                <div className="space-y-2">
-                  <div className="h-1 w-16 bg-purple-500 rounded-full mx-auto shadow-lg shadow-purple-500/50" />
-                  <div className="font-medium text-purple-400">Drop here</div>
-                </div>
-              ) : (
-                'No tasks'
-              )}
-            </div>
           )}
           
           {/* Quick create button */}
@@ -334,7 +324,7 @@ function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent, onDel
 
   return (
     <div className="relative">
-      {/* Drop indicator line above task */}
+      {/* Drop indicator line - ONLY above the task being hovered */}
       {isOverFromParent && (
         <div className="absolute -top-2 left-0 right-0 h-1 bg-purple-500 rounded-full z-10 shadow-lg shadow-purple-500/50" />
       )}
@@ -349,11 +339,6 @@ function SortableTask({ task, users, onUpdate, onSelect, isOverFromParent, onDel
           onDuplicate={onDuplicate}
         />
       </div>
-      
-      {/* Drop indicator line below task (for last task in list) */}
-      {isOverFromParent && (
-        <div className="absolute -bottom-2 left-0 right-0 h-1 bg-purple-500 rounded-full z-10 shadow-lg shadow-purple-500/50" />
-      )}
     </div>
   )
 }
