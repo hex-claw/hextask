@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, User } from '@/lib/supabase'
 import { getCurrentUser, signOut } from '@/lib/auth'
@@ -16,7 +16,9 @@ import {
   Bot,
   User as UserIcon,
   Calendar,
-  Trash2
+  Trash2,
+  Eye,
+  ChevronDown
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -34,15 +36,26 @@ type Document = {
   creator?: User
 }
 
+type DocumentGroup = {
+  baseName: string
+  displayName: string
+  description: string | null
+  formats: Document[]
+  creator?: User
+  created_at: string
+}
+
 export default function DocumentsPage() {
   const router = useRouter()
   const [documents, setDocuments] = useState<Document[]>([])
+  const [documentGroups, setDocumentGroups] = useState<DocumentGroup[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState<{ id: string, type: 'download' | 'preview' } | null>(null)
 
   // Check auth on mount
   useEffect(() => {
@@ -91,9 +104,87 @@ export default function DocumentsPage() {
         creator: usersData?.find(u => u.id === doc.created_by)
       }))
       setDocuments(docsWithCreators)
+      
+      // Group documents by base name
+      const groups = groupDocuments(docsWithCreators)
+      setDocumentGroups(groups)
     }
 
     setLoading(false)
+  }
+
+  // Group documents by base name (ignore file extensions)
+  const groupDocuments = (docs: Document[]): DocumentGroup[] => {
+    const groupMap = new Map<string, DocumentGroup>()
+
+    docs.forEach(doc => {
+      // Extract base name (remove file extension)
+      const baseName = doc.file_name.replace(/\.(md|html|pdf|docx|doc|txt)$/i, '')
+      
+      if (groupMap.has(baseName)) {
+        const group = groupMap.get(baseName)!
+        group.formats.push(doc)
+      } else {
+        groupMap.set(baseName, {
+          baseName,
+          displayName: doc.name,
+          description: doc.description,
+          formats: [doc],
+          creator: doc.creator,
+          created_at: doc.created_at
+        })
+      }
+    })
+
+    return Array.from(groupMap.values()).sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+  }
+
+  // Get file extension
+  const getExtension = (filename: string): string => {
+    const ext = filename.match(/\.([^.]+)$/)?.[1]?.toLowerCase()
+    return ext || 'file'
+  }
+
+  // Format labels for display
+  const formatLabel = (ext: string): string => {
+    const labels: Record<string, string> = {
+      pdf: 'PDF',
+      html: 'HTML',
+      md: 'Markdown',
+      docx: 'Word',
+      doc: 'Word',
+      txt: 'Text'
+    }
+    return labels[ext] || ext.toUpperCase()
+  }
+
+  // Get priority for sorting formats (PDF first, HTML last)
+  const getFormatPriority = (ext: string): number => {
+    const priority: Record<string, number> = {
+      pdf: 1,
+      docx: 2,
+      doc: 3,
+      md: 4,
+      html: 5,
+      txt: 6
+    }
+    return priority[ext] || 999
+  }
+
+  // Sort formats by priority
+  const sortFormats = (formats: Document[]): Document[] => {
+    return [...formats].sort((a, b) => {
+      const extA = getExtension(a.file_name)
+      const extB = getExtension(b.file_name)
+      return getFormatPriority(extA) - getFormatPriority(extB)
+    })
+  }
+
+  // Get best format for preview (PDF > DOCX > Markdown > HTML)
+  const getBestFormat = (formats: Document[]): Document => {
+    return sortFormats(formats)[0]
   }
 
   const handleLogout = async () => {
@@ -110,7 +201,6 @@ export default function DocumentsPage() {
 
     try {
       // For now, show a message that this feature is coming soon
-      // In production, this would upload to Supabase Storage
       setError('File upload is being set up. Please wait for the next deployment.')
     } catch (err) {
       console.error('Upload error:', err)
@@ -120,19 +210,38 @@ export default function DocumentsPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', id)
+  const handleDelete = async (groupId: string) => {
+    const group = documentGroups.find(g => g.baseName === groupId)
+    if (!group) return
 
-    if (error) {
-      console.error('Error deleting document:', error)
-      setError('Failed to delete document')
-      return
+    // Delete all formats
+    for (const doc of group.formats) {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', doc.id)
+
+      if (error) {
+        console.error('Error deleting document:', error)
+        setError('Failed to delete document')
+        return
+      }
     }
 
     fetchData()
+  }
+
+  const handlePreview = (doc: Document) => {
+    const url = `https://ffsgkiozmvkyirrrzofx.supabase.co/storage/v1/object/public/documents/${doc.file_path}`
+    window.open(url, '_blank')
+  }
+
+  const handleDownload = (doc: Document) => {
+    const url = `https://ffsgkiozmvkyirrrzofx.supabase.co/storage/v1/object/public/documents/${doc.file_path}`
+    const link = document.createElement('a')
+    link.href = url
+    link.download = doc.file_name
+    link.click()
   }
 
   const formatFileSize = (bytes: number | null) => {
@@ -147,6 +256,67 @@ export default function DocumentsPage() {
     if (mimeType.startsWith('image/')) return <ImageIcon size={20} />
     if (mimeType.startsWith('video/')) return <Film size={20} />
     return <FileText size={20} />
+  }
+
+  // Dropdown component
+  function FormatDropdown({ group, type }: { group: DocumentGroup, type: 'download' | 'preview' }) {
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const sortedFormats = sortFormats(group.formats)
+    const isOpen = openDropdown?.id === group.baseName && openDropdown?.type === type
+
+    useEffect(() => {
+      function handleClickOutside(event: MouseEvent) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setOpenDropdown(null)
+        }
+      }
+      if (isOpen) {
+        document.addEventListener('mousedown', handleClickOutside)
+      }
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [isOpen])
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setOpenDropdown(isOpen ? null : { id: group.baseName, type })}
+          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-initial ${
+            type === 'preview' 
+              ? 'bg-purple-600 hover:bg-purple-700' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {type === 'preview' ? <Eye size={14} className="sm:w-4 sm:h-4" /> : <Download size={14} className="sm:w-4 sm:h-4" />}
+          {type === 'preview' ? 'Preview' : 'Download'}
+          <ChevronDown size={12} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {isOpen && (
+          <div className="absolute right-0 mt-2 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[140px] z-50">
+            {sortedFormats.map((doc) => {
+              const ext = getExtension(doc.file_name)
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => {
+                    if (type === 'preview') {
+                      handlePreview(doc)
+                    } else {
+                      handleDownload(doc)
+                    }
+                    setOpenDropdown(null)
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-white/10 transition-colors"
+                >
+                  <span>{formatLabel(ext)}</span>
+                  <span className="text-gray-500">{formatFileSize(doc.file_size)}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
   }
 
   // Loading/auth check
@@ -245,7 +415,7 @@ export default function DocumentsPage() {
           </p>
         </div>
 
-        {documents.length === 0 ? (
+        {documentGroups.length === 0 ? (
           <div className="glass p-8 sm:p-12 text-center">
             <Upload size={40} className="mx-auto mb-4 text-gray-600 sm:w-12 sm:h-12" />
             <h3 className="text-base sm:text-lg font-medium mb-2">No documents yet</h3>
@@ -255,65 +425,60 @@ export default function DocumentsPage() {
           </div>
         ) : (
           <div className="grid gap-3 sm:gap-4">
-            {documents.map((doc) => (
-              <div key={doc.id} className="glass p-3 sm:p-4 hover:border-purple-500/30 transition-all">
-                <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                  {/* Icon */}
-                  <div className="p-2 sm:p-3 bg-white/5 rounded-lg text-purple-400">
-                    {getFileIcon(doc.mime_type)}
-                  </div>
+            {documentGroups.map((group) => {
+              const bestFormat = getBestFormat(group.formats)
+              return (
+                <div key={group.baseName} className="glass p-3 sm:p-4 hover:border-purple-500/30 transition-all">
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    {/* Icon */}
+                    <div className="p-2 sm:p-3 bg-white/5 rounded-lg text-purple-400">
+                      {getFileIcon(bestFormat.mime_type)}
+                    </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <a 
-                      href={`https://ffsgkiozmvkyirrrzofx.supabase.co/storage/v1/object/public/documents/${doc.file_path}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-purple-400 transition-colors block"
-                    >
-                      <h3 className="text-sm sm:text-base font-medium mb-1">{doc.name}</h3>
-                    </a>
-                    {doc.description && (
-                      <p className="text-xs sm:text-sm text-gray-400 mb-2">{doc.description}</p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
-                      <span className="truncate max-w-[200px] sm:max-w-none">{doc.file_name}</span>
-                      <span>{formatFileSize(doc.file_size)}</span>
-                      {doc.creator && (
-                        <span className="flex items-center gap-1">
-                          {doc.creator.is_ai ? <Bot size={12} /> : <UserIcon size={12} />}
-                          <span className="hidden sm:inline">{doc.creator.name}</span>
-                        </span>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <button 
+                        onClick={() => handlePreview(bestFormat)}
+                        className="hover:text-purple-400 transition-colors block text-left w-full"
+                      >
+                        <h3 className="text-sm sm:text-base font-medium mb-1">{group.displayName}</h3>
+                      </button>
+                      {group.description && (
+                        <p className="text-xs sm:text-sm text-gray-400 mb-2 line-clamp-2">{group.description}</p>
                       )}
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {format(new Date(doc.created_at), 'MMM d, yyyy')}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <FileText size={12} />
+                          {group.formats.length} format{group.formats.length > 1 ? 's' : ''}
+                        </span>
+                        {group.creator && (
+                          <span className="flex items-center gap-1">
+                            {group.creator.is_ai ? <Bot size={12} /> : <UserIcon size={12} />}
+                            <span className="hidden sm:inline">{group.creator.name}</span>
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} />
+                          {format(new Date(group.created_at), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <FormatDropdown group={group} type="preview" />
+                      <FormatDropdown group={group} type="download" />
+                      <button
+                        onClick={() => handleDelete(group.baseName)}
+                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                      </button>
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <a
-                      href={`https://ffsgkiozmvkyirrrzofx.supabase.co/storage/v1/object/public/documents/${doc.file_path}`}
-                      download={doc.file_name}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-initial"
-                    >
-                      <Download size={14} className="sm:w-4 sm:h-4" />
-                      Download
-                    </a>
-                    <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                    </button>
-                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
