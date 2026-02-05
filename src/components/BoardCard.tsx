@@ -183,6 +183,15 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         {task.title}
       </h4>
 
+      {/* Subtask indicator */}
+      {task.subtasks && task.subtasks.length > 0 && (
+        <div className="flex items-center gap-1 mb-2 text-xs text-gray-400">
+          <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">
+            {task.subtasks.filter(s => s.status === 'done').length}/{task.subtasks.length} subtasks
+          </span>
+        </div>
+      )}
+
       {/* Description preview */}
       {task.description && (
         <p className="text-xs text-gray-500 mb-3 line-clamp-2">
