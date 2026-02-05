@@ -108,12 +108,20 @@ export default function Home() {
       taskMap.forEach(task => {
         if (task.parent_id && taskMap.has(task.parent_id)) {
           const parent = taskMap.get(task.parent_id)!
-          parent.subtasks = parent.subtasks || []
+          if (!parent.subtasks) parent.subtasks = []
           parent.subtasks.push(task)
         } else {
           rootTasks.push(task)
         }
       })
+      
+      // Debug: Log tasks with subtasks
+      console.log('Root tasks:', rootTasks.length)
+      const tasksWithSubtasks = rootTasks.filter(t => t.subtasks && t.subtasks.length > 0)
+      console.log('Tasks with subtasks:', tasksWithSubtasks.map(t => ({
+        title: t.title,
+        subtaskCount: t.subtasks?.length
+      })))
       
       setTasks(rootTasks)
     }
