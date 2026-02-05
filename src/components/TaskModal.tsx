@@ -86,6 +86,58 @@ export function TaskModal({ task, users, onClose, onSave, onDelete, parentId, in
             />
           </div>
 
+          {/* Subtasks (if any) */}
+          {task?.subtasks && task.subtasks.length > 0 && (
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">
+                Subtasks ({task.subtasks.filter(s => s.status === 'done').length}/{task.subtasks.length} completed)
+              </label>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {task.subtasks.map((subtask) => (
+                  <div
+                    key={subtask.id}
+                    className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer transition-colors"
+                    onClick={() => {
+                      // Could open the subtask in a new modal, but for now just show info
+                    }}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                      subtask.status === 'done' 
+                        ? 'bg-green-500/30 border-green-500' 
+                        : 'border-white/30'
+                    }`}>
+                      {subtask.status === 'done' && (
+                        <svg className="w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-medium ${subtask.status === 'done' ? 'line-through text-gray-500' : ''}`}>
+                        {subtask.title}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          subtask.status === 'done' ? 'bg-green-500/20 text-green-400' :
+                          subtask.status === 'in_progress' ? 'bg-purple-500/20 text-purple-400' :
+                          subtask.status === 'review' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          {subtask.status.replace('_', ' ')}
+                        </span>
+                        {subtask.assignee_id && (
+                          <span className="text-xs text-gray-500">
+                            {users.find(u => u.id === subtask.assignee_id)?.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Status */}
             <div>
