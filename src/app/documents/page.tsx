@@ -424,7 +424,7 @@ export default function DocumentsPage() {
       )}
 
       {/* Unified Header */}
-      <header className="glass flex-shrink-0 z-40">
+      <header className="glass-header flex-shrink-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
           {/* Top Row: Logo, Actions, Nav */}
           <div className="flex items-center justify-between gap-3">
