@@ -77,13 +77,18 @@ function Dropdown({
 
   useEffect(() => {
     if (isOpen && anchorRef.current) {
-      const rect = anchorRef.current.getBoundingClientRect()
-      setPosition({
-        top: rect.bottom + 4,
-        left: rect.left
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        if (anchorRef.current) {
+          const rect = anchorRef.current.getBoundingClientRect()
+          setPosition({
+            top: rect.bottom + window.scrollY + 4,
+            left: rect.left + window.scrollX
+          })
+        }
       })
     }
-  }, [isOpen, anchorRef])
+  }, [isOpen])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -200,10 +205,19 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </Dropdown>
       </div>
 
-      {/* Title - single line, truncated, compact */}
-      <h4 className="font-medium text-[10px] sm:text-xs group-hover:text-purple-300 transition-colors pr-5 sm:pr-6 leading-tight truncate">
-        {task.title}
-      </h4>
+      {/* Title - single line, truncated, compact with tooltip */}
+      <div className="group/title relative">
+        <h4 className="font-medium text-[10px] sm:text-xs group-hover:text-purple-300 transition-colors pr-5 sm:pr-6 leading-tight truncate">
+          {task.title}
+        </h4>
+        {/* Tooltip */}
+        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-50">
+          <div className="bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl px-3 py-2 max-w-[200px]">
+            <p className="text-xs text-white whitespace-normal">{task.title}</p>
+            <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-[#1a1a2e]"></div>
+          </div>
+        </div>
+      </div>
 
       {/* Middle section - subtask count or spacer */}
       <div className="flex-1 flex items-center">
