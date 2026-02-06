@@ -192,68 +192,8 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
       onClick={() => onSelect(task)}
       className="p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col gap-1"
     >
-      {/* Assignee avatar - top right, always visible */}
-      <div className="absolute top-2 right-2">
-        <div 
-          ref={assigneeRef}
-          onClick={(e) => { 
-            e.stopPropagation()
-            setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')
-          }}
-          className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 ${
-            assignee?.is_ai 
-              ? 'bg-purple-500/20 border border-purple-500/30' 
-              : assignee 
-                ? 'bg-blue-500/20 border border-blue-500/30'
-                : 'bg-white/5 border border-white/10'
-          }`}
-          title={assignee?.name || 'Unassigned'}
-        >
-          {assignee?.is_ai ? (
-            <Bot size={12} className="text-purple-400" />
-          ) : assignee ? (
-            <span className="text-[10px] font-medium text-blue-400">
-              {assignee.name.charAt(0).toUpperCase()}
-            </span>
-          ) : (
-            <UserIcon size={12} className="text-gray-400" />
-          )}
-        </div>
-      </div>
-
-      {mounted && (
-        <DropdownPortal 
-          isOpen={openDropdown === 'assignee'} 
-          onClose={() => setOpenDropdown(null)}
-          anchorRef={assigneeRef}
-        >
-          <button
-            onClick={() => handleAssigneeChange(null)}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10 ${!task.assignee_id ? 'bg-white/5' : ''}`}
-          >
-            <UserIcon size={12} className="text-gray-400" />
-            Unassigned
-          </button>
-          <div className="border-t border-white/10 my-1" />
-          {users.map((user) => (
-            <button
-              key={user.id}
-              onClick={() => handleAssigneeChange(user.id)}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10 ${task.assignee_id === user.id ? 'bg-white/5' : ''}`}
-            >
-              {user.is_ai ? (
-                <Bot size={12} className="text-purple-400" />
-              ) : (
-                <UserIcon size={12} className="text-blue-400" />
-              )}
-              {user.name}
-            </button>
-          ))}
-        </DropdownPortal>
-      )}
-
-      {/* Three-dot menu */}
-      <div className="absolute top-2 right-9 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Three-dot menu - top right */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           ref={menuRef}
           onClick={(e) => { 
@@ -310,9 +250,9 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </DropdownPortal>
       )}
 
-      {/* Title with tooltip - extra padding for assignee avatar */}
+      {/* Title with tooltip */}
       <div 
-        className="relative pr-9"
+        className="relative pr-6"
         onMouseEnter={() => setShowTitleTooltip(true)}
         onMouseLeave={() => setShowTitleTooltip(false)}
       >
@@ -342,7 +282,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </div>
       )}
 
-      {/* Bottom row: Priority badge + Due date (fixed width to prevent layout shift) */}
+      {/* Bottom row: Priority badge + Due date + Assignee */}
       <div className="flex items-center gap-2 mt-auto justify-start">
         {/* Priority badge - fixed min-width */}
         <div 
@@ -439,6 +379,64 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 </button>
               </>
             )}
+          </DropdownPortal>
+        )}
+
+        {/* Assignee - small avatar circle at bottom right */}
+        <div 
+          ref={assigneeRef}
+          onClick={(e) => { 
+            e.stopPropagation()
+            setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')
+          }}
+          className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 flex-shrink-0 ${
+            assignee?.is_ai 
+              ? 'bg-purple-500/20 border border-purple-500/30' 
+              : assignee 
+                ? 'bg-blue-500/20 border border-blue-500/30'
+                : 'bg-white/5 border border-white/10'
+          }`}
+          title={assignee?.name || 'Unassigned'}
+        >
+          {assignee?.is_ai ? (
+            <Bot size={12} className="text-purple-400" />
+          ) : assignee ? (
+            <span className="text-[10px] font-medium text-blue-400">
+              {assignee.name.charAt(0).toUpperCase()}
+            </span>
+          ) : (
+            <UserIcon size={12} className="text-gray-400" />
+          )}
+        </div>
+
+        {mounted && (
+          <DropdownPortal 
+            isOpen={openDropdown === 'assignee'} 
+            onClose={() => setOpenDropdown(null)}
+            anchorRef={assigneeRef}
+          >
+            <button
+              onClick={() => handleAssigneeChange(null)}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10 ${!task.assignee_id ? 'bg-white/5' : ''}`}
+            >
+              <UserIcon size={12} className="text-gray-400" />
+              Unassigned
+            </button>
+            <div className="border-t border-white/10 my-1" />
+            {users.map((user) => (
+              <button
+                key={user.id}
+                onClick={() => handleAssigneeChange(user.id)}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10 ${task.assignee_id === user.id ? 'bg-white/5' : ''}`}
+              >
+                {user.is_ai ? (
+                  <Bot size={12} className="text-purple-400" />
+                ) : (
+                  <UserIcon size={12} className="text-blue-400" />
+                )}
+                {user.name}
+              </button>
+            ))}
           </DropdownPortal>
         )}
       </div>
