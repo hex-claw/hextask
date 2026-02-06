@@ -450,11 +450,14 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Mobile Nav */}
-              <nav className="flex sm:hidden items-center gap-1 bg-white/5 rounded-lg p-1 mr-1">
-                <a href="/" className="px-2 py-1.5 rounded text-xs font-medium bg-purple-600 text-white">Tasks</a>
-                <a href="/documents" className="px-2 py-1.5 rounded text-xs font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Docs</a>
-              </nav>
+              {/* Plus Button */}
+              <button
+                onClick={() => setModalTask('new')}
+                className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors text-sm"
+              >
+                <Plus size={16} />
+                <span className="hidden sm:inline">New Task</span>
+              </button>
 
               {/* Mobile Filter Toggle */}
               <button
@@ -463,6 +466,12 @@ export default function Home() {
               >
                 {showFilters ? <X size={18} /> : <Filter size={18} />}
               </button>
+
+              {/* Mobile Nav - Rightmost */}
+              <nav className="flex sm:hidden items-center gap-1 bg-white/5 rounded-lg p-1">
+                <a href="/" className="px-2 py-1.5 rounded text-xs font-medium bg-purple-600 text-white">Tasks</a>
+                <a href="/documents" className="px-2 py-1.5 rounded text-xs font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Docs</a>
+              </nav>
 
               {/* View Toggle - Desktop */}
               <div className="hidden sm:flex items-center bg-white/5 rounded-lg p-1">
@@ -481,14 +490,6 @@ export default function Home() {
                   <LayoutGrid size={16} />
                 </button>
               </div>
-
-              <button
-                onClick={() => setModalTask('new')}
-                className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors text-sm"
-              >
-                <Plus size={16} />
-                <span className="hidden sm:inline">New Task</span>
-              </button>
             </div>
           </div>
 

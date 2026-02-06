@@ -444,14 +444,6 @@ export default function DocumentsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Mobile Filter Toggle */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="sm:hidden p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                {showFilters ? <X size={18} /> : <Filter size={18} />}
-              </button>
-
               {/* Upload button */}
               <label className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors cursor-pointer text-sm">
                 <Upload size={16} />
@@ -464,7 +456,15 @@ export default function DocumentsPage() {
                 />
               </label>
 
-              {/* Mobile Nav - On the right like Tasks page */}
+              {/* Mobile Filter Toggle */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="sm:hidden p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                {showFilters ? <X size={18} /> : <Filter size={18} />}
+              </button>
+
+              {/* Mobile Nav - Rightmost */}
               <nav className="flex sm:hidden items-center gap-1 bg-white/5 rounded-lg p-1">
                 <a href="/" className="px-2 py-1.5 rounded text-xs font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Tasks</a>
                 <a href="/documents" className="px-2 py-1.5 rounded text-xs font-medium bg-purple-600 text-white">Docs</a>
