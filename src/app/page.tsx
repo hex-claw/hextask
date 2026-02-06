@@ -166,13 +166,15 @@ export default function Home() {
   const handleSaveTask = async (taskData: Partial<Task>) => {
     setError(null)
     
+    // Determine if this is a subtask operation BEFORE the try block
+    const isSubtask = taskData.id 
+      ? tasks.some(t => t.subtasks?.some(st => st.id === taskData.id))
+      : !!taskData.parent_id
+    
     try {
       if (taskData.id) {
         // Update existing task
         const { id, subtasks, assignee, ...updateData } = taskData as Task
-        
-        // Check if this is a subtask by looking it up in current tasks
-        const isSubtask = tasks.some(t => t.subtasks?.some(st => st.id === id))
         
         // Optimistic update for subtasks
         if (isSubtask) {
@@ -277,7 +279,7 @@ export default function Home() {
       }
       
       // Only fetch and close for non-subtask operations
-      if (!taskData.parent_id) {
+      if (!isSubtask) {
         fetchData()
         setModalTask(null)
       }
