@@ -491,66 +491,67 @@ export default function Home() {
       {/* Toolbar - Sticky on mobile */}
       <div className="sticky top-[57px] sm:top-[65px] z-30 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-white/5">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
-          <div className="glass p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-4">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
-            <Search size={16} className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 sm:pl-10 pr-2 sm:pr-4 py-1.5 sm:py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
-            />
-          </div>
+          <div className="glass p-2 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-4">
+            {/* Search - full width on mobile */}
+            <div className="relative flex-1 sm:min-w-[200px]">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+              />
+            </div>
 
-          {/* Status filter */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
-            className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
-          >
-            <option value="all">All Status</option>
-            <option value="backlog">Backlog</option>
-            <option value="todo">To Do</option>
-            <option value="in_progress">In Progress</option>
-            <option value="review">Review</option>
-            <option value="done">Done</option>
-          </select>
+            {/* Filters row - compact on mobile */}
+            <div className="flex items-center gap-2">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
+                className="px-2 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500 flex-1 sm:flex-none"
+              >
+                <option value="all">All</option>
+                <option value="backlog">Backlog</option>
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="review">Review</option>
+                <option value="done">Done</option>
+              </select>
 
-          {/* Assignee filter */}
-          <select
-            value={filterAssignee}
-            onChange={(e) => setFilterAssignee(e.target.value)}
-            className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
-          >
-            <option value="all">All</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.is_ai ? '🤖' : '👤'} {user.name}
-              </option>
-            ))}
-          </select>
+              <select
+                value={filterAssignee}
+                onChange={(e) => setFilterAssignee(e.target.value)}
+                className="px-2 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500 flex-1 sm:flex-none max-w-[100px] sm:max-w-none"
+              >
+                <option value="all">All</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name.split(' ')[0]}
+                  </option>
+                ))}
+              </select>
 
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-1.5 sm:p-2 rounded ${viewMode === 'list' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
-              title="List view"
-            >
-              <List size={16} className="sm:w-[18px] sm:h-[18px]" />
-            </button>
-            <button
-              onClick={() => setViewMode('board')}
-              className={`p-1.5 sm:p-2 rounded ${viewMode === 'board' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
-              title="Board view"
-            >
-              <LayoutGrid size={16} className="sm:w-[18px] sm:h-[18px]" />
-            </button>
+              {/* View toggle - icon only */}
+              <div className="flex items-center bg-white/5 rounded-lg p-1 flex-shrink-0">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded ${viewMode === 'list' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+                  title="List view"
+                >
+                  <List size={16} />
+                </button>
+                <button
+                  onClick={() => setViewMode('board')}
+                  className={`p-2 rounded ${viewMode === 'board' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+                  title="Board view"
+                >
+                  <LayoutGrid size={16} />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       {/* Content */}

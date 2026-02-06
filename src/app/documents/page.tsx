@@ -56,7 +56,7 @@ export default function DocumentsPage() {
   const [authChecked, setAuthChecked] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [openDropdown, setOpenDropdown] = useState<{ id: string, type: 'download' | 'preview' } | null>(null)
+  const [openDropdown, setOpenDropdown] = useState<{ id: string, type: 'download' | 'preview' | 'mobile' } | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
@@ -282,6 +282,62 @@ export default function DocumentsPage() {
     return <FileText size={20} />
   }
 
+  // Mobile Actions - combines preview and download into single dropdown
+  function MobileActions({ group }: { group: DocumentGroup }) {
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const sortedFormats = sortFormats(group.formats)
+    const isOpen = openDropdown?.id === group.baseName && openDropdown?.type === 'mobile'
+
+    useEffect(() => {
+      function handleClickOutside(event: MouseEvent) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setOpenDropdown(null)
+        }
+      }
+      if (isOpen) {
+        document.addEventListener('mousedown', handleClickOutside)
+      }
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [isOpen])
+
+    return (
+      <div className="relative sm:hidden" ref={dropdownRef}>
+        <button
+          onClick={() => setOpenDropdown(isOpen ? null : { id: group.baseName, type: 'mobile' })}
+          className="flex items-center justify-center p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors min-h-[36px] min-w-[36px]"
+        >
+          <Eye size={16} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 mt-2 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[140px] z-50">
+            {sortedFormats.map((doc) => {
+              const ext = getExtension(doc.file_name)
+              return (
+                <div key={doc.id} className="border-b border-white/5 last:border-0">
+                  <button
+                    onClick={() => { handlePreview(doc); setOpenDropdown(null) }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+                  >
+                    <Eye size={12} />
+                    Preview {formatLabel(ext)}
+                  </button>
+                  <button
+                    onClick={() => { handleDownload(doc); setOpenDropdown(null) }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+                  >
+                    <Download size={12} />
+                    Download {formatLabel(ext)}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Dropdown component
   function FormatDropdown({ group, type }: { group: DocumentGroup, type: 'download' | 'preview' }) {
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -301,17 +357,17 @@ export default function DocumentsPage() {
     }, [isOpen])
 
     return (
-      <div className="relative" ref={dropdownRef}>
+      <div className="relative hidden sm:block" ref={dropdownRef}>
         <button
           onClick={() => setOpenDropdown(isOpen ? null : { id: group.baseName, type })}
-          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-colors flex-1 sm:flex-initial cursor-pointer min-h-[44px] touch-manipulation ${
+          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
             type === 'preview'
               ? 'bg-purple-600 hover:bg-purple-700'
               : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {type === 'preview' ? <Eye size={16} className="sm:w-4 sm:h-4" /> : <Download size={16} className="sm:w-4 sm:h-4" />}
-          <span className="hidden sm:inline">{type === 'preview' ? 'Preview' : 'Download'}</span>
+          {type === 'preview' ? <Eye size={16} /> : <Download size={16} />}
+          <span>{type === 'preview' ? 'Preview' : 'Download'}</span>
           <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
@@ -464,76 +520,68 @@ export default function DocumentsPage() {
           </div>
         ) : (
           <div className="glass overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
-                <thead className="bg-white/5 border-b border-white/10">
-                  <tr>
-                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400">Document</th>
-                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden md:table-cell">Formats</th>
-                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden lg:table-cell">Created By</th>
-                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden xl:table-cell">Date</th>
-                    <th className="text-right px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedGroups.map((group) => {
-                    const bestFormat = getBestFormat(group.formats)
-                    return (
-                      <tr key={group.baseName} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="px-3 sm:px-4 py-2 sm:py-3">
-                          <button
-                            onClick={() => handlePreview(bestFormat)}
-                            className="text-left hover:text-purple-400 transition-colors cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2 sm:gap-3">
-                              <div className="p-1.5 sm:p-2 bg-white/5 rounded-lg text-purple-400 flex-shrink-0">
-                                {getFileIcon(bestFormat.mime_type)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-medium text-sm truncate max-w-[150px] sm:max-w-[200px]">{group.displayName}</div>
-                                {group.description && (
-                                  <div className="text-xs text-gray-400 line-clamp-1 hidden sm:block">{group.description}</div>
-                                )}
+            <table className="w-full">
+              <thead className="bg-white/5 border-b border-white/10">
+                <tr>
+                  <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400">Document</th>
+                  <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden md:table-cell">Formats</th>
+                  <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden lg:table-cell">By</th>
+                  <th className="text-right px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 w-[120px] sm:w-auto">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedGroups.map((group) => {
+                  const bestFormat = getBestFormat(group.formats)
+                  return (
+                    <tr key={group.baseName} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <button
+                          onClick={() => handlePreview(bestFormat)}
+                          className="text-left hover:text-purple-400 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-1.5 sm:p-2 bg-white/5 rounded-lg text-purple-400 flex-shrink-0">
+                              {getFileIcon(bestFormat.mime_type)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-xs sm:text-sm truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px]">{group.displayName}</div>
+                              <div className="text-[10px] sm:text-xs text-gray-400 line-clamp-1">
+                                {group.formats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
+                                <span className="hidden sm:inline"> • {group.creator?.name}</span>
                               </div>
                             </div>
-                          </button>
-                        </td>
-                        <td className="px-3 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
-                          <span className="text-xs sm:text-sm text-gray-400">
-                            {group.formats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-4 py-2 sm:py-3 hidden lg:table-cell">
-                          {group.creator && (
-                            <span className="flex items-center gap-1 text-xs sm:text-sm text-gray-400">
-                              {group.creator.is_ai ? <Bot size={12} /> : <UserIcon size={12} />}
-                              {group.creator.name}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 sm:px-4 py-2 sm:py-3 hidden xl:table-cell">
-                          <span className="text-xs sm:text-sm text-gray-400">
-                            {format(new Date(group.created_at), 'MMM d, yyyy')}
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-4 py-2 sm:py-3">
-                          <div className="flex items-center justify-end gap-1 sm:gap-2">
-                            <FormatDropdown group={group} type="preview" />
-                            <FormatDropdown group={group} type="download" />
-                            <button
-                              onClick={() => handleDelete(group.baseName)}
-                              className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors cursor-pointer"
-                            >
-                              <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                            </button>
                           </div>
-                        </td>
-                      </tr>
-                    )
+                        </button>
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
+                        <span className="text-xs sm:text-sm text-gray-400">
+                          {group.formats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
+                        </span>
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden lg:table-cell">
+                        {group.creator && (
+                          <span className="flex items-center gap-1 text-xs sm:text-sm text-gray-400">
+                            {group.creator.is_ai ? <Bot size={12} /> : <UserIcon size={12} />}
+                            {group.creator.name}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <MobileActions group={group} />
+                          <button
+                            onClick={() => handleDelete(group.baseName)}
+                            className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
                   })}
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
         )}
 
