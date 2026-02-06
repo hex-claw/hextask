@@ -489,9 +489,9 @@ export default function Home() {
       </header>
 
       {/* Toolbar - Sticky on mobile */}
-      <div className="sticky top-[57px] sm:top-[65px] z-30 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-white/5">
+      <div className="sticky top-[57px] sm:top-[65px] z-30 glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
-          <div className="glass p-2 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-4">
+          <div className="bg-white/5 rounded-xl p-2 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-4">
             {/* Search - full width on mobile */}
             <div className="relative flex-1 sm:min-w-[200px]">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
