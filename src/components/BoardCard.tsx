@@ -50,10 +50,10 @@ function DropdownBadge({
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onToggle() }}
-      className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border text-[10px] sm:text-xs transition-all hover:scale-105 ${className}`}
+      className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] transition-all hover:scale-105 ${className}`}
     >
       {children}
-      <ChevronDown size={10} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      <ChevronDown size={8} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
     </button>
   )
 }
@@ -129,7 +129,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
   return (
     <div
       onClick={() => onSelect(task)}
-      className="p-2 sm:p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative"
+      className="p-2 sm:p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between overflow-hidden"
     >
       {/* Quick Actions Menu */}
       <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -178,29 +178,22 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </Dropdown>
       </div>
 
-      {/* Title */}
-      <h4 className="font-medium text-xs sm:text-sm mb-2 sm:mb-3 group-hover:text-purple-300 transition-colors pr-5 sm:pr-6 leading-tight">
+      {/* Title - single line, truncated */}
+      <h4 className="font-medium text-xs sm:text-sm group-hover:text-purple-300 transition-colors pr-5 sm:pr-6 leading-tight truncate">
         {task.title}
       </h4>
 
-      {/* Subtask indicator */}
-      {task.subtasks && task.subtasks.length > 0 && (
-        <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
-          <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded text-[10px] sm:text-xs">
-            {task.subtasks.filter(s => s.status === 'done').length}/{task.subtasks.length}
+      {/* Middle section - subtask count or spacer */}
+      <div className="flex-1 flex items-center">
+        {task.subtasks && task.subtasks.length > 0 && (
+          <span className="text-[10px] sm:text-xs text-gray-400">
+            {task.subtasks.filter(s => s.status === 'done').length}/{task.subtasks.length} subtasks
           </span>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Description preview */}
-      {task.description && (
-        <p className="text-[10px] sm:text-xs text-gray-500 mb-2 sm:mb-3 line-clamp-1 sm:line-clamp-2">
-          {task.description}
-        </p>
-      )}
-
-      {/* Badges row */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Badges row - compact, single line */}
+      <div className="flex items-center gap-1.5 sm:gap-2 mt-auto">
         {/* Priority Badge */}
         <div className="relative">
           <DropdownBadge
@@ -208,8 +201,8 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
             onToggle={() => setOpenDropdown(openDropdown === 'priority' ? null : 'priority')}
             className={priority.color}
           >
-            <PriorityIcon size={10} className="sm:w-3 sm:h-3" />
-            <span className="hidden sm:inline">{priority.label}</span>
+            <PriorityIcon size={10} />
+            <span className="hidden lg:inline">{priority.label}</span>
           </DropdownBadge>
           <Dropdown isOpen={openDropdown === 'priority'} onClose={() => setOpenDropdown(null)}>
             {(Object.keys(priorityConfig) as Task['priority'][]).map((p) => {
@@ -241,8 +234,8 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 : 'bg-white/5 text-gray-400 border-white/10'
             }
           >
-            <Calendar size={10} className="sm:w-3 sm:h-3" />
-            <span>{dueDateDisplay?.text || 'No date'}</span>
+            <Calendar size={10} />
+            <span className="max-w-[50px] truncate">{dueDateDisplay?.text || '—'}</span>
           </DropdownBadge>
           <Dropdown isOpen={openDropdown === 'due'} onClose={() => setOpenDropdown(null)}>
             <button
@@ -297,8 +290,8 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 : 'bg-white/5 text-gray-400 border-white/10'
             }
           >
-            {assignee?.is_ai ? <Bot size={10} className="sm:w-3 sm:h-3" /> : <UserIcon size={10} className="sm:w-3 sm:h-3" />}
-            <span className="hidden sm:inline">{assignee?.name || 'Unassigned'}</span>
+            {assignee?.is_ai ? <Bot size={10} /> : <UserIcon size={10} />}
+            <span className="hidden lg:inline max-w-[60px] truncate">{assignee?.name?.split(' ')[0] || '—'}</span>
           </DropdownBadge>
           <Dropdown isOpen={openDropdown === 'assignee'} onClose={() => setOpenDropdown(null)}>
             <button
