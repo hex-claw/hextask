@@ -18,7 +18,9 @@ import {
   Bot,
   User as UserIcon,
   Hexagon,
-  LogOut
+  LogOut,
+  Filter,
+  X
 } from 'lucide-react'
 
 type ViewMode = 'list' | 'board'
@@ -42,6 +44,7 @@ export default function Home() {
   const [filterAssignee, setFilterAssignee] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
 
   // Check auth on mount
   useEffect(() => {
@@ -417,193 +420,218 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen gradient-bg">
+    <main className="h-screen gradient-bg flex flex-col overflow-hidden">
       {/* Error banner */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 text-center">
+        <div className="bg-red-500/20 border-b border-red-500/50 text-red-300 px-4 py-2 text-center flex-shrink-0">
           {error}
           <button onClick={() => setError(null)} className="ml-4 underline">Dismiss</button>
         </div>
       )}
 
-      {/* Header */}
-      <header className="glass sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-6 min-w-0">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-1.5 sm:p-2 bg-purple-600/30 rounded-lg">
-                  <Hexagon size={20} className="text-purple-400 sm:w-6 sm:h-6" />
+      {/* Unified Header + Toolbar */}
+      <header className="glass flex-shrink-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
+          {/* Top Row: Logo, Nav, Actions */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-purple-600/30 rounded-lg">
+                  <Hexagon size={18} className="text-purple-400" />
                 </div>
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl font-bold">HexTask</h1>
-                  <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">J + Hex Co-working</p>
-                </div>
+                <span className="font-bold text-base sm:text-lg">HexTask</span>
               </div>
 
-              {/* Navigation */}
-              <nav className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
-                <a
-                  href="/"
-                  className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-purple-600 text-white"
-                >
-                  Tasks
-                </a>
-                <a
-                  href="/documents"
-                  className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
-                >
-                  Docs
-                </a>
+              {/* Desktop Nav */}
+              <nav className="hidden sm:flex items-center gap-1 bg-white/5 rounded-lg p-1 ml-2">
+                <a href="/" className="px-3 py-1.5 rounded-md text-sm font-medium bg-purple-600 text-white">Tasks</a>
+                <a href="/documents" className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Docs</a>
               </nav>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-              {/* Current user indicator */}
-              {currentUser && (
-                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
-                  <div className={`p-1 rounded-full ${currentUser.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
-                    {currentUser.is_ai ? (
-                      <Bot size={14} className="text-purple-400" />
-                    ) : (
-                      <UserIcon size={14} className="text-blue-400" />
-                    )}
-                  </div>
-                  <span className="text-sm">{currentUser.name}</span>
-                  <button onClick={handleLogout} className="ml-2 text-gray-400 hover:text-white">
-                    <LogOut size={14} />
-                  </button>
-                </div>
-              )}
-
-              <button
-                onClick={() => setModalTask('new')}
-                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors text-sm"
-              >
-                <Plus size={18} className="sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">New Task</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Toolbar - Sticky on mobile */}
-      <div className="sticky top-[57px] sm:top-[65px] z-30 glass border-t-0">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
-          <div className="bg-white/5 rounded-xl p-2 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-4">
-            {/* Search - full width on mobile */}
-            <div className="relative flex-1 sm:min-w-[200px]">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
-              />
-            </div>
-
-            {/* Filters row - compact on mobile */}
             <div className="flex items-center gap-2">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
-                className="px-2 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500 flex-1 sm:flex-none"
+              {/* Mobile Filter Toggle */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="sm:hidden p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
               >
-                <option value="all">All</option>
-                <option value="backlog">Backlog</option>
-                <option value="todo">To Do</option>
-                <option value="in_progress">In Progress</option>
-                <option value="review">Review</option>
-                <option value="done">Done</option>
-              </select>
+                {showFilters ? <X size={18} /> : <Filter size={18} />}
+              </button>
 
-              <select
-                value={filterAssignee}
-                onChange={(e) => setFilterAssignee(e.target.value)}
-                className="px-2 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500 flex-1 sm:flex-none max-w-[100px] sm:max-w-none"
-              >
-                <option value="all">All</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name.split(' ')[0]}
-                  </option>
-                ))}
-              </select>
-
-              {/* View toggle - icon only */}
-              <div className="flex items-center bg-white/5 rounded-lg p-1 flex-shrink-0">
+              {/* View Toggle - Desktop */}
+              <div className="hidden sm:flex items-center bg-white/5 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded ${viewMode === 'list' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+                  className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
                   title="List view"
                 >
                   <List size={16} />
                 </button>
                 <button
                   onClick={() => setViewMode('board')}
-                  className={`p-2 rounded ${viewMode === 'board' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
+                  className={`p-1.5 rounded ${viewMode === 'board' ? 'bg-purple-600' : 'hover:bg-white/10'}`}
                   title="Board view"
                 >
                   <LayoutGrid size={16} />
                 </button>
               </div>
+
+              <button
+                onClick={() => setModalTask('new')}
+                className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors text-sm"
+              >
+                <Plus size={16} />
+                <span className="hidden sm:inline">New Task</span>
+              </button>
             </div>
           </div>
+
+          {/* Desktop Filters Row */}
+          <div className="hidden sm:flex items-center gap-3 mt-3 pt-3 border-t border-white/10">
+            <div className="relative flex-1 max-w-md">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+              />
+            </div>
+
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
+              className="px-3 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+            >
+              <option value="all">All Status</option>
+              <option value="backlog">Backlog</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="done">Done</option>
+            </select>
+
+            <select
+              value={filterAssignee}
+              onChange={(e) => setFilterAssignee(e.target.value)}
+              className="px-3 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+            >
+              <option value="all">All Users</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>{user.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Mobile Filters Panel */}
+          {showFilters && (
+            <div className="sm:hidden mt-3 pt-3 border-t border-white/10 space-y-2">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
+                  className="flex-1 px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="backlog">Backlog</option>
+                  <option value="todo">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="review">Review</option>
+                  <option value="done">Done</option>
+                </select>
+                <select
+                  value={filterAssignee}
+                  onChange={(e) => setFilterAssignee(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+                >
+                  <option value="all">All Users</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>{user.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm ${viewMode === 'list' ? 'bg-purple-600' : 'bg-white/5 hover:bg-white/10'}`}
+                >
+                  <List size={16} /> List
+                </button>
+                <button
+                  onClick={() => setViewMode('board')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm ${viewMode === 'board' ? 'bg-purple-600' : 'bg-white/5 hover:bg-white/10'}`}
+                >
+                  <LayoutGrid size={16} /> Board
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </header>
 
-      {/* Content */}
-      <div className="px-2 sm:px-4 pb-8 pt-2">
-        {loading ? (
-          <div className="glass p-8 text-center text-gray-400 max-w-7xl mx-auto">
-            Loading tasks...
-          </div>
-        ) : viewMode === 'list' ? (
-          /* List View */
-          <ListView
-            tasks={filteredTasks}
-            users={users}
-            onUpdate={handleUpdateTask}
-            onSelect={(t) => setModalTask(t)}
-            onDelete={requestDeleteTask}
-            onDuplicate={requestDuplicateTask}
-          />
-        ) : (
-          /* Board View */
-          <>
-            {/* Mobile: Vertical Accordion */}
-            <div className="lg:hidden px-2 py-4">
-              <MobileKanban
-                statusGroups={statusGroups}
-                statusLabels={statusLabels}
-                users={users}
-                onUpdate={handleUpdateTask}
-                onSelect={(t) => setModalTask(t)}
-                onDelete={requestDeleteTask}
-                onDuplicate={requestDuplicateTask}
-              />
+      {/* Content - fills remaining height */}
+      <div className="flex-1 overflow-auto px-2 sm:px-4 py-2">
+        <div className="max-w-7xl mx-auto h-full">
+          {loading ? (
+            <div className="glass p-8 text-center text-gray-400">
+              Loading tasks...
             </div>
+          ) : viewMode === 'list' ? (
+            /* List View */
+            <ListView
+              tasks={filteredTasks}
+              users={users}
+              onUpdate={handleUpdateTask}
+              onSelect={(t) => setModalTask(t)}
+              onDelete={requestDeleteTask}
+              onDuplicate={requestDuplicateTask}
+            />
+          ) : (
+            /* Board View */
+            <>
+              {/* Mobile: Vertical Accordion */}
+              <div className="lg:hidden h-full">
+                <MobileKanban
+                  statusGroups={statusGroups}
+                  statusLabels={statusLabels}
+                  users={users}
+                  onUpdate={handleUpdateTask}
+                  onSelect={(t) => setModalTask(t)}
+                  onDelete={requestDeleteTask}
+                  onDuplicate={requestDuplicateTask}
+                />
+              </div>
 
-            {/* Desktop: Horizontal Draggable Board */}
-            <div className="hidden lg:block">
-              <DraggableKanbanBoard
-                statusGroups={statusGroups}
-                statusLabels={statusLabels}
-                users={users}
-                onUpdate={handleUpdateTask}
-                onSelect={(t) => setModalTask(t)}
-                onQuickCreate={(status) => {
-                  setNewTaskStatus(status)
-                  setModalTask('new')
-                }}
-                onDelete={requestDeleteTask}
-                onDuplicate={requestDuplicateTask}
-              />
-            </div>
-          </>
-        )}
+              {/* Desktop: Horizontal Draggable Board */}
+              <div className="hidden lg:block h-full">
+                <DraggableKanbanBoard
+                  statusGroups={statusGroups}
+                  statusLabels={statusLabels}
+                  users={users}
+                  onUpdate={handleUpdateTask}
+                  onSelect={(t) => setModalTask(t)}
+                  onQuickCreate={(status) => {
+                    setNewTaskStatus(status)
+                    setModalTask('new')
+                  }}
+                  onDelete={requestDeleteTask}
+                  onDuplicate={requestDuplicateTask}
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Task Modal */}
