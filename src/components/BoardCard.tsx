@@ -152,7 +152,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
   return (
     <div
       onClick={() => onSelect(task)}
-      className="p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between"
+      className="p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col gap-1"
     >
       {/* Three-dot menu */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -217,8 +217,8 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         <h4 className="font-medium text-xs group-hover:text-purple-300 transition-colors leading-tight truncate">
           {task.title}
         </h4>
-        {/* Tooltip */}
-        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-50 pointer-events-none">
+        {/* Tooltip - high z-index to show above column headers */}
+        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-[9999] pointer-events-none">
           <div className="bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl px-3 py-2 max-w-[200px] whitespace-normal">
             <p className="text-xs text-white">{task.title}</p>
             <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-[#1a1a2e]"></div>
@@ -238,7 +238,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
 
       {/* Bottom row: Priority badge, Due date, Assignee */}
       <div className="flex items-center gap-2 mt-auto">
-        {/* Priority badge - compact */}
+        {/* Priority badge - compact with max width */}
         <div 
           ref={priorityRef}
           onClick={(e) => { 
@@ -248,7 +248,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
           className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] transition-all hover:scale-105 cursor-pointer ${priority.color}`}
         >
           <PriorityIcon size={10} />
-          <span className="hidden lg:inline">{priority.label}</span>
+          <span className="hidden lg:inline max-w-[24px] truncate">{priority.label}</span>
         </div>
 
         {mounted && (
@@ -286,7 +286,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
           }`}
         >
           <Calendar size={10} />
-          <span>{dueDateDisplay?.text || 'No date'}</span>
+          {dueDateDisplay?.text && <span>{dueDateDisplay.text}</span>}
         </div>
 
         {mounted && (

@@ -109,28 +109,82 @@ export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicat
           )}
         </div>
 
-        <div className="flex items-start gap-2 sm:gap-3 pr-10 sm:pr-8">
+        {/* Mobile: Single line layout */}
+        <div className="flex sm:hidden items-center gap-2 pr-10">
           {/* Expand/Collapse for subtasks */}
           {hasSubtasks ? (
             <button
               onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
-              className="mt-1 text-gray-400 hover:text-white p-1 -ml-1 min-w-[32px] min-h-[32px] flex items-center justify-center"
+              className="text-gray-400 hover:text-white flex-shrink-0"
             >
-              {expanded ? <ChevronDown size={18} className="sm:w-4 sm:h-4" /> : <ChevronRight size={18} className="sm:w-4 sm:h-4" />}
+              {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
           ) : (
-            <div className="w-5 sm:w-4" />
+            <div className="w-3.5" />
+          )}
+
+          {/* Priority icon */}
+          <div className={`p-1 rounded ${priority.bg} flex-shrink-0`}>
+            <PriorityIcon size={12} className={priority.color} />
+          </div>
+
+          {/* Title - smaller and truncated */}
+          <h3 className={`font-medium text-xs leading-tight flex-1 min-w-0 truncate ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
+            {task.title}
+          </h3>
+
+          {/* Due date icon */}
+          {task.due_date && (
+            <div className="flex-shrink-0">
+              <Calendar size={12} className="text-gray-400" />
+            </div>
+          )}
+
+          {/* Assignee avatar */}
+          <div 
+            className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+              assignee?.is_ai 
+                ? 'bg-purple-500/20 border border-purple-500/30' 
+                : assignee 
+                  ? 'bg-blue-500/20 border border-blue-500/30'
+                  : 'bg-white/5 border border-white/10'
+            }`}
+          >
+            {assignee?.is_ai ? (
+              <Bot size={10} className="text-purple-400" />
+            ) : assignee ? (
+              <span className="text-[8px] font-medium text-blue-400">
+                {assignee.name.charAt(0).toUpperCase()}
+              </span>
+            ) : (
+              <UserIcon size={10} className="text-gray-400" />
+            )}
+          </div>
+        </div>
+
+        {/* Desktop: Original layout */}
+        <div className="hidden sm:flex items-start gap-3 pr-8">
+          {/* Expand/Collapse for subtasks */}
+          {hasSubtasks ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
+              className="mt-1 text-gray-400 hover:text-white p-1 -ml-1"
+            >
+              {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+          ) : (
+            <div className="w-4" />
           )}
 
           {/* Priority indicator */}
-          <div className={`p-2 sm:p-1.5 rounded ${priority.bg} flex-shrink-0`}>
-            <PriorityIcon size={18} className={`${priority.color} sm:w-3.5 sm:h-3.5`} />
+          <div className={`p-1.5 rounded ${priority.bg} flex-shrink-0`}>
+            <PriorityIcon size={14} className={priority.color} />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1.5 sm:mb-1">
-              <span className={`px-2 py-1 sm:py-0.5 rounded text-xs ${status.color}`}>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className={`px-2 py-0.5 rounded text-xs ${status.color}`}>
                 {status.label}
               </span>
               {task.due_date && (
@@ -141,34 +195,20 @@ export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicat
               )}
             </div>
 
-            <h3 className={`font-medium text-sm sm:text-base leading-snug ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
+            <h3 className={`font-medium text-base leading-snug ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
               {task.title}
             </h3>
 
             {task.description && (
-              <p className="text-xs sm:text-sm text-gray-400 mt-1.5 sm:mt-1 line-clamp-2 leading-relaxed">
+              <p className="text-sm text-gray-400 mt-1 line-clamp-2 leading-relaxed">
                 {task.description}
               </p>
-            )}
-
-            {/* Assignee - inline on mobile */}
-            {assignee && (
-              <div className="flex items-center gap-1.5 mt-2 sm:hidden">
-                <div className={`p-1 rounded-full ${assignee.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
-                  {assignee.is_ai ? (
-                    <Bot size={10} className="text-purple-400" />
-                  ) : (
-                    <UserIcon size={10} className="text-blue-400" />
-                  )}
-                </div>
-                <span className="text-xs text-gray-400">{assignee.name}</span>
-              </div>
             )}
           </div>
 
           {/* Assignee - desktop only */}
           {assignee && (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <div className={`p-1.5 rounded-full ${assignee.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
                 {assignee.is_ai ? (
                   <Bot size={14} className="text-purple-400" />
