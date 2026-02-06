@@ -55,41 +55,41 @@ export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicat
   const assignee = users.find(u => u.id === task.assignee_id)
 
   return (
-    <div className={`${depth > 0 ? 'ml-6 border-l border-purple-500/30 pl-4' : ''}`}>
-      <div 
-        className="glass p-4 mb-2 hover:border-purple-500/50 transition-all cursor-pointer group relative"
+    <div className={`${depth > 0 ? 'ml-4 sm:ml-6 border-l border-purple-500/30 pl-3 sm:pl-4' : ''}`}>
+      <div
+        className="glass p-3 sm:p-4 mb-2 sm:mb-3 hover:border-purple-500/50 transition-all cursor-pointer group relative min-h-[80px] sm:min-h-0"
         onClick={() => onSelect(task)}
       >
-        {/* Quick Actions Menu */}
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Quick Actions Menu - Always visible on mobile, hover on desktop */}
+        <div className="absolute top-2 right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu) }}
-            className="p-1 hover:bg-white/20 rounded transition-colors"
+            className="p-2 sm:p-1 hover:bg-white/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
           >
-            <MoreVertical size={16} className="text-gray-400" />
+            <MoreVertical size={18} className="sm:w-4 sm:h-4 text-gray-400" />
           </button>
           {showMenu && (
-            <div className="absolute right-0 mt-1 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[140px] z-50">
+            <div className="absolute right-0 mt-1 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[160px] z-50">
               <button
                 onClick={(e) => { e.stopPropagation(); onSelect(task); setShowMenu(false) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/10 sm:px-3 sm:py-2 sm:text-xs"
               >
-                <Eye size={12} />
+                <Eye size={16} className="sm:w-3 sm:h-3" />
                 View
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onSelect(task); setShowMenu(false) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/10 sm:px-3 sm:py-2 sm:text-xs"
               >
-                <Edit size={12} />
+                <Edit size={16} className="sm:w-3 sm:h-3" />
                 Edit
               </button>
               {onDuplicate && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDuplicate(task); setShowMenu(false) }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-white/10 sm:px-3 sm:py-2 sm:text-xs"
                 >
-                  <Copy size={12} />
+                  <Copy size={16} className="sm:w-3 sm:h-3" />
                   Duplicate
                 </button>
               )}
@@ -98,9 +98,9 @@ export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicat
                   <div className="border-t border-white/10 my-1" />
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(task.id); setShowMenu(false) }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-500/20 text-red-400"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-red-500/20 text-red-400 sm:px-3 sm:py-2 sm:text-xs"
                   >
-                    <Trash2 size={12} />
+                    <Trash2 size={16} className="sm:w-3 sm:h-3" />
                     Delete
                   </button>
                 </>
@@ -109,28 +109,28 @@ export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicat
           )}
         </div>
 
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2 sm:gap-3 pr-10 sm:pr-8">
           {/* Expand/Collapse for subtasks */}
           {hasSubtasks ? (
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
-              className="mt-1 text-gray-400 hover:text-white"
+              className="mt-1 text-gray-400 hover:text-white p-1 -ml-1 min-w-[32px] min-h-[32px] flex items-center justify-center"
             >
-              {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              {expanded ? <ChevronDown size={18} className="sm:w-4 sm:h-4" /> : <ChevronRight size={18} className="sm:w-4 sm:h-4" />}
             </button>
           ) : (
-            <div className="w-4" />
+            <div className="w-5 sm:w-4" />
           )}
 
           {/* Priority indicator */}
-          <div className={`p-1.5 rounded ${priority.bg}`}>
-            <PriorityIcon size={14} className={priority.color} />
+          <div className={`p-2 sm:p-1.5 rounded ${priority.bg} flex-shrink-0`}>
+            <PriorityIcon size={18} className={`${priority.color} sm:w-3.5 sm:h-3.5`} />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`px-2 py-0.5 rounded text-xs ${status.color}`}>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5 sm:mb-1">
+              <span className={`px-2 py-1 sm:py-0.5 rounded text-xs ${status.color}`}>
                 {status.label}
               </span>
               {task.due_date && (
@@ -140,21 +140,35 @@ export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicat
                 </span>
               )}
             </div>
-            
-            <h3 className={`font-medium ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
+
+            <h3 className={`font-medium text-sm sm:text-base leading-snug ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
               {task.title}
             </h3>
-            
+
             {task.description && (
-              <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+              <p className="text-xs sm:text-sm text-gray-400 mt-1.5 sm:mt-1 line-clamp-2 leading-relaxed">
                 {task.description}
               </p>
             )}
+
+            {/* Assignee - inline on mobile */}
+            {assignee && (
+              <div className="flex items-center gap-1.5 mt-2 sm:hidden">
+                <div className={`p-1 rounded-full ${assignee.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
+                  {assignee.is_ai ? (
+                    <Bot size={10} className="text-purple-400" />
+                  ) : (
+                    <UserIcon size={10} className="text-blue-400" />
+                  )}
+                </div>
+                <span className="text-xs text-gray-400">{assignee.name}</span>
+              </div>
+            )}
           </div>
 
-          {/* Assignee */}
+          {/* Assignee - desktop only */}
           {assignee && (
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <div className={`p-1.5 rounded-full ${assignee.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
                 {assignee.is_ai ? (
                   <Bot size={14} className="text-purple-400" />
@@ -169,7 +183,7 @@ export function TaskCard({ task, users, onUpdate, onSelect, onDelete, onDuplicat
 
         {/* Subtask count */}
         {hasSubtasks && (
-          <div className="mt-2 ml-7 text-xs text-gray-500">
+          <div className="mt-2 ml-8 sm:ml-7 text-xs text-gray-500">
             {task.subtasks!.filter(s => s.status === 'done').length}/{task.subtasks!.length} subtasks done
           </div>
         )}

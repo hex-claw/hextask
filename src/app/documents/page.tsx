@@ -304,19 +304,19 @@ export default function DocumentsPage() {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setOpenDropdown(isOpen ? null : { id: group.baseName, type })}
-          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-initial cursor-pointer ${
-            type === 'preview' 
-              ? 'bg-purple-600 hover:bg-purple-700' 
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-colors flex-1 sm:flex-initial cursor-pointer min-h-[44px] touch-manipulation ${
+            type === 'preview'
+              ? 'bg-purple-600 hover:bg-purple-700'
               : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {type === 'preview' ? <Eye size={14} className="sm:w-4 sm:h-4" /> : <Download size={14} className="sm:w-4 sm:h-4" />}
-          {type === 'preview' ? 'Preview' : 'Download'}
-          <ChevronDown size={12} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          {type === 'preview' ? <Eye size={16} className="sm:w-4 sm:h-4" /> : <Download size={16} className="sm:w-4 sm:h-4" />}
+          <span className="hidden sm:inline">{type === 'preview' ? 'Preview' : 'Download'}</span>
+          <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
-        
+
         {isOpen && (
-          <div className="absolute right-0 mt-2 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[140px] z-50">
+          <div className="absolute right-0 mt-2 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[160px] z-50">
             {sortedFormats.map((doc) => {
               const ext = getExtension(doc.file_name)
               return (
@@ -330,10 +330,10 @@ export default function DocumentsPage() {
                     }
                     setOpenDropdown(null)
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-white/10 transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-white/10 transition-colors min-h-[44px]"
                 >
                   <span>{formatLabel(ext)}</span>
-                  <span className="text-gray-500">{formatFileSize(doc.file_size)}</span>
+                  <span className="text-gray-500 text-xs">{formatFileSize(doc.file_size)}</span>
                 </button>
               )
             })}
@@ -463,76 +463,135 @@ export default function DocumentsPage() {
             </p>
           </div>
         ) : (
-          <div className="glass overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-white/5 border-b border-white/10">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Document</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden sm:table-cell">Formats</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden md:table-cell">Created By</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden lg:table-cell">Date</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-400">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedGroups.map((group) => {
-                  const bestFormat = getBestFormat(group.formats)
-                  return (
-                    <tr key={group.baseName} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => handlePreview(bestFormat)}
-                          className="text-left hover:text-purple-400 transition-colors cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white/5 rounded-lg text-purple-400">
-                              {getFileIcon(bestFormat.mime_type)}
-                            </div>
-                            <div>
-                              <div className="font-medium">{group.displayName}</div>
-                              {group.description && (
-                                <div className="text-xs text-gray-400 line-clamp-1">{group.description}</div>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="text-sm text-gray-400">
-                          {group.formats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
+          <>
+            {/* Mobile: Card Layout */}
+            <div className="space-y-3 sm:hidden">
+              {paginatedGroups.map((group) => {
+                const bestFormat = getBestFormat(group.formats)
+                const sortedFormats = sortFormats(group.formats)
+                return (
+                  <div key={group.baseName} className="glass p-4 space-y-3">
+                    {/* Title and icon */}
+                    <button
+                      onClick={() => handlePreview(bestFormat)}
+                      className="flex items-start gap-3 w-full text-left"
+                    >
+                      <div className="p-2 bg-white/5 rounded-lg text-purple-400 flex-shrink-0">
+                        {getFileIcon(bestFormat.mime_type)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm truncate">{group.displayName}</div>
+                        {group.description && (
+                          <div className="text-xs text-gray-400 line-clamp-2 mt-1">{group.description}</div>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Meta info */}
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <div className="flex items-center gap-2">
                         {group.creator && (
-                          <span className="flex items-center gap-1 text-sm text-gray-400">
-                            {group.creator.is_ai ? <Bot size={12} /> : <UserIcon size={12} />}
+                          <span className="flex items-center gap-1">
+                            {group.creator.is_ai ? <Bot size={10} /> : <UserIcon size={10} />}
                             {group.creator.name}
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-sm text-gray-400">
-                          {format(new Date(group.created_at), 'MMM d, yyyy')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
-                          <FormatDropdown group={group} type="preview" />
-                          <FormatDropdown group={group} type="download" />
+                        <span>•</span>
+                        <span>{format(new Date(group.created_at), 'MMM d')}</span>
+                      </div>
+                      <span className="text-gray-500">
+                        {sortedFormats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                      <FormatDropdown group={group} type="preview" />
+                      <FormatDropdown group={group} type="download" />
+                      <button
+                        onClick={() => handleDelete(group.baseName)}
+                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop: Table Layout */}
+            <div className="glass overflow-hidden hidden sm:block">
+              <table className="w-full">
+                <thead className="bg-white/5 border-b border-white/10">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Document</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden sm:table-cell">Formats</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden md:table-cell">Created By</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden lg:table-cell">Date</th>
+                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-400">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedGroups.map((group) => {
+                    const bestFormat = getBestFormat(group.formats)
+                    return (
+                      <tr key={group.baseName} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td className="px-4 py-3">
                           <button
-                            onClick={() => handleDelete(group.baseName)}
-                            className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors cursor-pointer"
+                            onClick={() => handlePreview(bestFormat)}
+                            className="text-left hover:text-purple-400 transition-colors cursor-pointer"
                           >
-                            <Trash2 size={14} />
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-white/5 rounded-lg text-purple-400">
+                                {getFileIcon(bestFormat.mime_type)}
+                              </div>
+                              <div>
+                                <div className="font-medium">{group.displayName}</div>
+                                {group.description && (
+                                  <div className="text-xs text-gray-400 line-clamp-1">{group.description}</div>
+                                )}
+                              </div>
+                            </div>
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <span className="text-sm text-gray-400">
+                            {group.formats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          {group.creator && (
+                            <span className="flex items-center gap-1 text-sm text-gray-400">
+                              {group.creator.is_ai ? <Bot size={12} /> : <UserIcon size={12} />}
+                              {group.creator.name}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <span className="text-sm text-gray-400">
+                            {format(new Date(group.created_at), 'MMM d, yyyy')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <FormatDropdown group={group} type="preview" />
+                            <FormatDropdown group={group} type="download" />
+                            <button
+                              onClick={() => handleDelete(group.baseName)}
+                              className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* Pagination */}

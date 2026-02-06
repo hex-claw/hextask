@@ -488,9 +488,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Toolbar */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
-        <div className="glass p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-4">
+      {/* Toolbar - Sticky on mobile */}
+      <div className="sticky top-[57px] sm:top-[65px] z-30 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
+          <div className="glass p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-4">
           {/* Search */}
           <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
             <Search size={16} className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -552,7 +553,7 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="px-4 pb-8">
+      <div className="px-2 sm:px-4 pb-8 pt-2">
         {loading ? (
           <div className="glass p-8 text-center text-gray-400 max-w-7xl mx-auto">
             Loading tasks...
