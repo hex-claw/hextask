@@ -151,14 +151,30 @@ export default function Home() {
     done: filteredTasks.filter(t => t.status === 'done'),
   }
 
-  // Save task
+  // Save task - with optimistic updates for subtasks
   const handleSaveTask = async (taskData: Partial<Task>) => {
     setError(null)
     
     try {
       if (taskData.id) {
-        // Update
+        // Update existing task
         const { id, subtasks, assignee, ...updateData } = taskData as Task
+        
+        // Optimistic update for subtasks
+        if (taskData.parent_id) {
+          setTasks(prevTasks => prevTasks.map(task => {
+            if (task.subtasks?.some(st => st.id === id)) {
+              return {
+                ...task,
+                subtasks: task.subtasks.map(st => 
+                  st.id === id ? { ...st, ...updateData } : st
+                )
+              }
+            }
+            return task
+          }))
+        }
+        
         const { error } = await supabase
           .from('tasks')
           .update(updateData)
@@ -167,11 +183,74 @@ export default function Home() {
         if (error) {
           console.error('Error updating task:', error)
           setError(`Failed to update task: ${error.message}`)
+          fetchData() // Revert on error
           return
         }
       } else {
-        // Create - exclude id field
+        // Create new task
         const { id, subtasks, assignee, ...insertData } = taskData as Task
+        
+        // Optimistic update for subtask creation
+        if (taskData.parent_id) {
+          const tempId = `temp-${Date.now()}`
+          const optimisticSubtask: Task = {
+            id: tempId,
+            title: insertData.title || '',
+            description: insertData.description || '',
+            status: (insertData.status || 'todo') as Task['status'],
+            priority: (insertData.priority || 'medium') as Task['priority'],
+            assignee_id: insertData.assignee_id || null,
+            due_date: insertData.due_date || null,
+            completed_at: null,
+            parent_id: insertData.parent_id,
+            position: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            subtasks: []
+          }
+          
+          setTasks(prevTasks => prevTasks.map(task => {
+            if (task.id === insertData.parent_id) {
+              return {
+                ...task,
+                subtasks: [...(task.subtasks || []), optimisticSubtask]
+              }
+            }
+            return task
+          }))
+          
+          // API call
+          const { data, error } = await supabase
+            .from('tasks')
+            .insert([insertData])
+            .select()
+            .single()
+          
+          if (error) {
+            console.error('Error creating task:', error)
+            setError(`Failed to create task: ${error.message}`)
+            fetchData() // Revert on error
+            return
+          }
+          
+          // Replace temp id with real id
+          if (data) {
+            setTasks(prevTasks => prevTasks.map(task => {
+              if (task.id === insertData.parent_id) {
+                return {
+                  ...task,
+                  subtasks: task.subtasks?.map(st => 
+                    st.id === tempId ? { ...st, id: data.id } : st
+                  ) || []
+                }
+              }
+              return task
+            }))
+          }
+          return // Don't close modal for subtask creation
+        }
+        
+        // Regular task creation (not subtask)
         const { error } = await supabase
           .from('tasks')
           .insert([insertData])
@@ -183,11 +262,15 @@ export default function Home() {
         }
       }
       
-      fetchData()
-      setModalTask(null)
+      // Only fetch and close for non-subtask operations
+      if (!taskData.parent_id) {
+        fetchData()
+        setModalTask(null)
+      }
     } catch (err) {
       console.error('Unexpected error:', err)
       setError('An unexpected error occurred')
+      fetchData() // Revert on error
     }
   }
 
@@ -201,9 +284,20 @@ export default function Home() {
     setConfirmDialog({ type: 'duplicate', task })
   }
 
-  // Actually delete task (after confirmation)
+  // Actually delete task (after confirmation) - with optimistic updates
   const handleDeleteTask = async (id: string) => {
     setError(null)
+    
+    // Check if it's a subtask (has parent)
+    const isSubtask = tasks.some(t => t.subtasks?.some(st => st.id === id))
+    
+    if (isSubtask) {
+      // Optimistic delete for subtask
+      setTasks(prevTasks => prevTasks.map(task => ({
+        ...task,
+        subtasks: task.subtasks?.filter(st => st.id !== id) || []
+      })))
+    }
     
     const { error} = await supabase
       .from('tasks')
@@ -213,11 +307,14 @@ export default function Home() {
     if (error) {
       console.error('Error deleting task:', error)
       setError(`Failed to delete task: ${error.message}`)
+      fetchData() // Revert on error
       return
     }
     
-    fetchData()
-    setModalTask(null)
+    if (!isSubtask) {
+      fetchData()
+      setModalTask(null)
+    }
     setConfirmDialog(null)
   }
 

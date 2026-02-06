@@ -314,14 +314,6 @@ export function ListView({ tasks, users, onUpdate, onSelect, onDelete, onDuplica
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-              className="p-2 hover:bg-white/10 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={16} />
-              <ChevronLeft size={16} className="-ml-3" />
-            </button>
-            <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               className="p-2 hover:bg-white/10 rounded disabled:opacity-30 disabled:cursor-not-allowed"
@@ -364,14 +356,6 @@ export function ListView({ tasks, users, onUpdate, onSelect, onDelete, onDuplica
               className="p-2 hover:bg-white/10 rounded disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronRight size={16} />
-            </button>
-            <button
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-              className="p-2 hover:bg-white/10 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={16} />
-              <ChevronRight size={16} className="-ml-3" />
             </button>
           </div>
         </div>
