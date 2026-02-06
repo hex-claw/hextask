@@ -8,6 +8,7 @@ import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
 import { DraggableKanbanBoard } from '@/components/DraggableKanbanBoard'
 import { MobileKanban } from '@/components/MobileKanban'
+import { ListView } from '@/components/ListView'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { 
   Plus, 
@@ -33,7 +34,6 @@ export default function Home() {
   const [modalTask, setModalTask] = useState<Task | null | 'new'>(null)
   const [newTaskStatus, setNewTaskStatus] = useState<Task['status'] | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('board')
-  const [listViewLimit, setListViewLimit] = useState(20)
   const [confirmDialog, setConfirmDialog] = useState<{
     type: 'delete' | 'duplicate'
     task: Task | string
@@ -247,9 +247,30 @@ export default function Home() {
     setConfirmDialog(null)
   }
 
-  // Update task (quick update from card)
+  // Update task (quick update from card) - optimistic updates
   const handleUpdateTask = async (taskData: Partial<Task> & { id: string }) => {
     const { subtasks, assignee, ...updateData } = taskData as Task & { id: string }
+    
+    // Optimistic update: update local state immediately
+    setTasks(prevTasks => {
+      return prevTasks.map(task => {
+        if (task.id === taskData.id) {
+          return { ...task, ...updateData }
+        }
+        // Check in subtasks
+        if (task.subtasks) {
+          return {
+            ...task,
+            subtasks: task.subtasks.map(subtask => 
+              subtask.id === taskData.id ? { ...subtask, ...updateData } : subtask
+            )
+          }
+        }
+        return task
+      })
+    })
+    
+    // API call in background
     const { error } = await supabase
       .from('tasks')
       .update(updateData)
@@ -258,10 +279,9 @@ export default function Home() {
     if (error) {
       console.error('Error updating task:', error)
       setError(`Failed to update task: ${error.message}`)
-      return
+      // Revert on error by refetching
+      fetchData()
     }
-    
-    fetchData()
   }
 
   const statusLabels = {
@@ -426,44 +446,19 @@ export default function Home() {
           </div>
         ) : viewMode === 'list' ? (
           /* List View */
-          <div className="space-y-2 max-w-7xl mx-auto">
-            {filteredTasks.length === 0 ? (
-              <div className="glass p-8 text-center text-gray-400">
-                No tasks found. Create one to get started!
-              </div>
-            ) : (
-              <>
-                {filteredTasks.slice(0, listViewLimit).map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    users={users}
-                    onUpdate={handleUpdateTask}
-                    onSelect={(t) => setModalTask(t)}
-                    onDelete={requestDeleteTask}
-                    onDuplicate={requestDuplicateTask}
-                  />
-                ))}
-                
-                {/* Load more button for list view */}
-                {filteredTasks.length > listViewLimit && (
-                  <div className="py-4 text-center">
-                    <button
-                      onClick={() => setListViewLimit(limit => limit + 20)}
-                      className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm transition-colors"
-                    >
-                      Load more ({filteredTasks.length - listViewLimit} hidden)
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          <ListView
+            tasks={filteredTasks}
+            users={users}
+            onUpdate={handleUpdateTask}
+            onSelect={(t) => setModalTask(t)}
+            onDelete={requestDeleteTask}
+            onDuplicate={requestDuplicateTask}
+          />
         ) : (
           /* Board View */
           <>
             {/* Mobile: Vertical Accordion */}
-            <div className="md:hidden px-2 py-4">
+            <div className="lg:hidden px-2 py-4">
               <MobileKanban
                 statusGroups={statusGroups}
                 statusLabels={statusLabels}
@@ -476,7 +471,7 @@ export default function Home() {
             </div>
 
             {/* Desktop: Horizontal Draggable Board */}
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <DraggableKanbanBoard
                 statusGroups={statusGroups}
                 statusLabels={statusLabels}

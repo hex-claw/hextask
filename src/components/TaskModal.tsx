@@ -86,33 +86,44 @@ export function TaskModal({ task, users, onClose, onSave, onDelete, parentId, in
             />
           </div>
 
-          {/* Subtasks (if any) */}
-          {task?.subtasks && task.subtasks.length > 0 && (
+          {/* Subtasks */}
+          {(task?.subtasks?.length ?? 0) > 0 && (
             <div>
               <label className="block text-sm text-gray-400 mb-2">
-                Subtasks ({task.subtasks.filter(s => s.status === 'done').length}/{task.subtasks.length} completed)
+                Subtasks ({task!.subtasks!.filter(s => s.status === 'done').length}/{task!.subtasks!.length} completed)
               </label>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {task.subtasks.map((subtask) => (
+                {task!.subtasks!.map((subtask) => (
                   <div
                     key={subtask.id}
-                    className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer transition-colors"
-                    onClick={() => {
-                      // Could open the subtask in a new modal, but for now just show info
-                    }}
+                    className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors group"
                   >
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                      subtask.status === 'done' 
-                        ? 'bg-green-500/30 border-green-500' 
-                        : 'border-white/30'
-                    }`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Toggle subtask status
+                        const newStatus = subtask.status === 'done' ? 'todo' : 'done'
+                        onSave({ id: subtask.id, status: newStatus })
+                      }}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        subtask.status === 'done' 
+                          ? 'bg-green-500/30 border-green-500 hover:bg-green-500/50' 
+                          : 'border-white/30 hover:border-white/50'
+                      }`}
+                    >
                       {subtask.status === 'done' && (
                         <svg className="w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
-                    </div>
-                    <div className="flex-1 min-w-0">
+                    </button>
+                    <div 
+                      className="flex-1 min-w-0 cursor-pointer"
+                      onClick={() => {
+                        // Could open the subtask in a new modal
+                        onSave({ id: subtask.id, status: subtask.status === 'done' ? 'todo' : 'done' })
+                      }}
+                    >
                       <div className={`text-sm font-medium ${subtask.status === 'done' ? 'line-through text-gray-500' : ''}`}>
                         {subtask.title}
                       </div>
@@ -132,8 +143,63 @@ export function TaskModal({ task, users, onClose, onSave, onDelete, parentId, in
                         )}
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(subtask.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-red-400 transition-opacity"
+                      title="Delete subtask"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add Subtask */}
+          {task && (
+            <div className="pt-2 border-t border-white/10">
+              <label className="block text-sm text-gray-400 mb-2">Add Subtask</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="What needs to be done?"
+                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement
+                      if (input.value.trim()) {
+                        onSave({
+                          title: input.value.trim(),
+                          status: 'todo',
+                          priority: task.priority,
+                          parent_id: task.id,
+                        })
+                        input.value = ''
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    const input = (e.currentTarget.previousSibling as HTMLInputElement)
+                    if (input && input.value.trim()) {
+                      onSave({
+                        title: input.value.trim(),
+                        status: 'todo',
+                        priority: task.priority,
+                        parent_id: task.id,
+                      })
+                      input.value = ''
+                    }
+                  }}
+                  className="px-3 py-2 bg-purple-600/50 hover:bg-purple-600 rounded-lg flex items-center gap-1 text-sm"
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
               </div>
             </div>
           )}

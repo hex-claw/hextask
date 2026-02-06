@@ -145,8 +145,8 @@ export function DraggableKanbanBoard({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex justify-center overflow-x-auto px-2 sm:px-0">
-        <div className="flex gap-3 sm:gap-4 min-h-[calc(100vh-220px)] pb-4">
+      <div className="flex justify-start lg:justify-center overflow-x-auto px-2 sm:px-4 pb-4">
+        <div className="flex gap-3 lg:gap-4 min-h-[calc(100vh-220px)]">
           {(Object.keys(statusGroups) as Task['status'][]).map((status) => (
             <DroppableColumn
               key={status}
@@ -236,25 +236,25 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`glass p-3 sm:p-4 w-[240px] sm:w-[280px] flex-shrink-0 flex flex-col transition-all duration-200 ${
+      className={`glass p-2 sm:p-3 lg:p-4 w-[200px] sm:w-[220px] md:w-[240px] lg:w-[260px] xl:w-[280px] flex-shrink-0 flex flex-col transition-all duration-200 ${
         isOverDroppable ? 'scale-[1.02] ring-2 ring-purple-400 bg-purple-500/10 shadow-lg shadow-purple-500/30' : ''
       }`}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
             status === 'backlog' ? 'bg-gray-400' :
             status === 'todo' ? 'bg-blue-400' :
             status === 'in_progress' ? 'bg-purple-400' :
             status === 'review' ? 'bg-yellow-400' :
             'bg-green-400'
           }`} />
-          <h3 className="font-medium text-gray-300">{label}</h3>
+          <h3 className="font-medium text-gray-300 text-sm sm:text-base truncate">{label}</h3>
         </div>
-        <span className="text-sm text-gray-500 bg-white/5 px-2 py-0.5 rounded">{tasks.length}</span>
+        <span className="text-xs sm:text-sm text-gray-500 bg-white/5 px-1.5 sm:px-2 py-0.5 rounded flex-shrink-0">{tasks.length}</span>
       </div>
       
-      <div className="space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-340px)]">
+      <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-320px)] lg:max-h-[calc(100vh-340px)]">
         {visibleTasks.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
             No tasks
