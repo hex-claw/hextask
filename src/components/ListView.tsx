@@ -186,21 +186,49 @@ export function ListView({ tasks, users, onUpdate, onSelect, onDelete, onDuplica
                     onClick={() => onSelect(task)}
                   >
                     <td className="p-3 sm:p-4">
-                      <div className="flex items-center gap-2">
-                        {/* Mobile priority indicator */}
-                        <div className={`sm:hidden p-1 rounded ${priority.bg}`}>
-                          <PriorityIcon size={12} className={priority.color} />
+                      {/* Mobile: Single line with all info */}
+                      <div className="flex sm:hidden items-center gap-1.5">
+                        {/* Priority icon */}
+                        <div className={`p-1 rounded ${priority.bg} flex-shrink-0`}>
+                          <PriorityIcon size={10} className={priority.color} />
                         </div>
-                        <div className="min-w-0">
-                          <div className={`font-medium truncate max-w-[200px] sm:max-w-[300px] ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
-                            {task.title}
-                          </div>
-                          {/* Mobile status */}
-                          <div className="sm:hidden mt-1">
-                            <span className={`text-xs px-2 py-0.5 rounded ${status.color}`}>
-                              {status.label}
+                        
+                        {/* Title - smaller and truncated */}
+                        <div className={`text-xs font-medium truncate flex-1 min-w-0 ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
+                          {task.title}
+                        </div>
+                        
+                        {/* Due date icon */}
+                        {task.due_date && (
+                          <Calendar size={10} className="text-gray-400 flex-shrink-0" />
+                        )}
+                        
+                        {/* Assignee avatar */}
+                        <div 
+                          className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            assignee?.is_ai 
+                              ? 'bg-purple-500/20 border border-purple-500/30' 
+                              : assignee 
+                                ? 'bg-blue-500/20 border border-blue-500/30'
+                                : 'bg-white/5 border border-white/10'
+                          }`}
+                        >
+                          {assignee?.is_ai ? (
+                            <Bot size={10} className="text-purple-400" />
+                          ) : assignee ? (
+                            <span className="text-[8px] font-medium text-blue-400">
+                              {assignee.name.charAt(0).toUpperCase()}
                             </span>
-                          </div>
+                          ) : (
+                            <UserIcon size={10} className="text-gray-400" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Desktop: Original layout */}
+                      <div className="hidden sm:block">
+                        <div className={`font-medium truncate max-w-[300px] ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
+                          {task.title}
                         </div>
                       </div>
                     </td>

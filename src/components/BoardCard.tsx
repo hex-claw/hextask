@@ -102,9 +102,46 @@ function DropdownPortal({
   )
 }
 
+// Tooltip component using portal
+function TitleTooltip({
+  text,
+  anchorRef
+}: {
+  text: string
+  anchorRef: React.RefObject<HTMLElement | null>
+}) {
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (anchorRef.current) {
+      const rect = anchorRef.current.getBoundingClientRect()
+      setPosition({
+        top: rect.top + window.scrollY - 50, // Above the element
+        left: rect.left + window.scrollX
+      })
+    }
+  }, [anchorRef])
+
+  if (typeof window === 'undefined') return null
+
+  return createPortal(
+    <div
+      className="fixed z-[9999] pointer-events-none"
+      style={{ top: `${position.top}px`, left: `${position.left}px` }}
+    >
+      <div className="bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl px-3 py-2 max-w-[200px] whitespace-normal">
+        <p className="text-xs text-white">{text}</p>
+        <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-[#1a1a2e]"></div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplicate }: BoardCardProps) {
   const [openDropdown, setOpenDropdown] = useState<'priority' | 'assignee' | 'due' | 'menu' | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [showTitleTooltip, setShowTitleTooltip] = useState(false)
   
   const priority = priorityConfig[task.priority]
   const PriorityIcon = priority.icon
@@ -114,6 +151,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
   const dueRef = useRef<HTMLDivElement>(null)
   const assigneeRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLButtonElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -213,18 +251,26 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
       )}
 
       {/* Title with tooltip */}
-      <div className="group/title relative pr-6">
-        <h4 className="font-medium text-xs group-hover:text-purple-300 transition-colors leading-tight truncate">
+      <div 
+        className="relative pr-6"
+        onMouseEnter={() => setShowTitleTooltip(true)}
+        onMouseLeave={() => setShowTitleTooltip(false)}
+      >
+        <h4 
+          ref={titleRef}
+          className="font-medium text-xs group-hover:text-purple-300 transition-colors leading-tight truncate"
+        >
           {task.title}
         </h4>
-        {/* Tooltip - high z-index to show above column headers */}
-        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-[9999] pointer-events-none">
-          <div className="bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl px-3 py-2 max-w-[200px] whitespace-normal">
-            <p className="text-xs text-white">{task.title}</p>
-            <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-[#1a1a2e]"></div>
-          </div>
-        </div>
       </div>
+      
+      {/* Tooltip Portal */}
+      {mounted && showTitleTooltip && (
+        <TitleTooltip 
+          text={task.title}
+          anchorRef={titleRef}
+        />
+      )}
 
       {/* Subtask count (middle section) */}
       {subtaskCount > 0 && (
@@ -236,19 +282,19 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </div>
       )}
 
-      {/* Bottom row: Priority badge, Due date, Assignee */}
-      <div className="flex items-center gap-2 mt-auto">
-        {/* Priority badge - compact with max width */}
+      {/* Bottom row: Priority badge, Due date, Assignee - fixed positions to prevent layout shift */}
+      <div className="flex items-center gap-2 mt-auto justify-start">
+        {/* Priority badge - fixed min-width */}
         <div 
           ref={priorityRef}
           onClick={(e) => { 
             e.stopPropagation()
             setOpenDropdown(openDropdown === 'priority' ? null : 'priority')
           }}
-          className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] transition-all hover:scale-105 cursor-pointer ${priority.color}`}
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] transition-all hover:scale-105 cursor-pointer flex-shrink-0 ${priority.color}`}
         >
           <PriorityIcon size={10} />
-          <span className="hidden lg:inline max-w-[24px] truncate">{priority.label}</span>
+          <span className="hidden lg:inline w-[24px] truncate">{priority.label}</span>
         </div>
 
         {mounted && (
@@ -274,19 +320,19 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
           </DropdownPortal>
         )}
 
-        {/* Due date - just text, clickable */}
+        {/* Due date - just text, clickable - fixed to prevent layout shift */}
         <div 
           ref={dueRef}
           onClick={(e) => { 
             e.stopPropagation()
             setOpenDropdown(openDropdown === 'due' ? null : 'due')
           }}
-          className={`flex items-center gap-1 text-[10px] cursor-pointer hover:bg-white/5 px-1.5 py-0.5 rounded transition-colors ${
+          className={`flex items-center gap-1 text-[10px] cursor-pointer hover:bg-white/5 px-1.5 py-0.5 rounded transition-colors flex-shrink-0 ${
             dueDateDisplay?.urgent ? 'text-red-400' : task.due_date ? 'text-blue-400' : 'text-gray-500'
           }`}
         >
-          <Calendar size={10} />
-          {dueDateDisplay?.text && <span>{dueDateDisplay.text}</span>}
+          <Calendar size={10} className="flex-shrink-0" />
+          {dueDateDisplay?.text && <span className="whitespace-nowrap">{dueDateDisplay.text}</span>}
         </div>
 
         {mounted && (
@@ -336,14 +382,14 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
           </DropdownPortal>
         )}
 
-        {/* Assignee - small avatar circle */}
+        {/* Assignee - small avatar circle - fixed size to prevent layout shift */}
         <div 
           ref={assigneeRef}
           onClick={(e) => { 
             e.stopPropagation()
             setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')
           }}
-          className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 ${
+          className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 flex-shrink-0 ${
             assignee?.is_ai 
               ? 'bg-purple-500/20 border border-purple-500/30' 
               : assignee 
