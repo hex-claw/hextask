@@ -36,19 +36,22 @@ interface BoardCardProps {
   onDuplicate?: (task: Task) => void
 }
 
-function DropdownBadge({ 
-  children, 
-  isOpen, 
-  onToggle, 
-  className = '' 
-}: { 
+const DropdownBadge = ({
+  children,
+  isOpen,
+  onToggle,
+  className = '',
+  buttonRef
+}: {
   children: React.ReactNode
   isOpen: boolean
   onToggle: () => void
-  className?: string 
-}) {
+  className?: string
+  buttonRef: React.RefObject<HTMLButtonElement | null>
+}) => {
   return (
     <button
+      ref={buttonRef}
       onClick={(e) => { e.stopPropagation(); onToggle() }}
       className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] transition-all hover:scale-105 ${className}`}
     >
@@ -58,16 +61,29 @@ function DropdownBadge({
   )
 }
 
-function Dropdown({ 
-  children, 
-  isOpen, 
-  onClose 
-}: { 
+function Dropdown({
+  children,
+  isOpen,
+  onClose,
+  anchorRef
+}: {
   children: React.ReactNode
   isOpen: boolean
-  onClose: () => void 
+  onClose: () => void
+  anchorRef: React.RefObject<HTMLButtonElement | null>
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (isOpen && anchorRef.current) {
+      const rect = anchorRef.current.getBoundingClientRect()
+      setPosition({
+        top: rect.bottom + 4,
+        left: rect.left
+      })
+    }
+  }, [isOpen, anchorRef])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -84,9 +100,10 @@ function Dropdown({
   if (!isOpen) return null
 
   return (
-    <div 
+    <div
       ref={ref}
-      className="absolute z-[100] mt-1 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-2xl min-w-[140px] max-h-[200px] overflow-y-auto"
+      className="fixed z-[9999] py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-2xl min-w-[140px] max-h-[200px] overflow-y-auto"
+      style={{ top: position.top, left: position.left }}
       onClick={(e) => e.stopPropagation()}
     >
       {children}
@@ -99,6 +116,10 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
   const priority = priorityConfig[task.priority]
   const PriorityIcon = priority.icon
   const assignee = users.find(u => u.id === task.assignee_id)
+  const priorityRef = useRef<HTMLButtonElement>(null)
+  const dueRef = useRef<HTMLButtonElement>(null)
+  const assigneeRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLButtonElement>(null)
 
   const handlePriorityChange = async (newPriority: Task['priority']) => {
     onUpdate({ id: task.id, priority: newPriority })
@@ -129,17 +150,18 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
   return (
     <div
       onClick={() => onSelect(task)}
-      className="p-2 sm:p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between"
+      className="p-2 sm:p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between z-0"
     >
       {/* Quick Actions Menu */}
       <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
+          ref={menuRef}
           onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'menu' ? null : 'menu') }}
           className="p-1 hover:bg-white/20 rounded transition-colors"
         >
           <MoreVertical size={14} className="sm:w-4 sm:h-4 text-gray-400" />
         </button>
-        <Dropdown isOpen={openDropdown === 'menu'} onClose={() => setOpenDropdown(null)}>
+        <Dropdown isOpen={openDropdown === 'menu'} onClose={() => setOpenDropdown(null)} anchorRef={menuRef}>
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(task); setOpenDropdown(null) }}
             className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
@@ -178,8 +200,8 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </Dropdown>
       </div>
 
-      {/* Title - single line, truncated */}
-      <h4 className="font-medium text-xs sm:text-sm group-hover:text-purple-300 transition-colors pr-5 sm:pr-6 leading-tight truncate">
+      {/* Title - single line, truncated, compact */}
+      <h4 className="font-medium text-[10px] sm:text-xs group-hover:text-purple-300 transition-colors pr-5 sm:pr-6 leading-tight truncate">
         {task.title}
       </h4>
 
@@ -193,18 +215,19 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
       </div>
 
       {/* Badges row - compact, single line */}
-      <div className="flex items-center gap-1 mt-auto overflow-hidden">
+      <div className="flex items-center gap-1 mt-auto">
         {/* Priority Badge */}
         <div className="relative flex-shrink-0">
           <DropdownBadge
             isOpen={openDropdown === 'priority'}
             onToggle={() => setOpenDropdown(openDropdown === 'priority' ? null : 'priority')}
             className={priority.color}
+            buttonRef={priorityRef}
           >
             <PriorityIcon size={10} />
             <span className="hidden xl:inline ml-0.5">{priority.label}</span>
           </DropdownBadge>
-          <Dropdown isOpen={openDropdown === 'priority'} onClose={() => setOpenDropdown(null)}>
+          <Dropdown isOpen={openDropdown === 'priority'} onClose={() => setOpenDropdown(null)} anchorRef={priorityRef}>
             {(Object.keys(priorityConfig) as Task['priority'][]).map((p) => {
               const config = priorityConfig[p]
               const Icon = config.icon
@@ -222,7 +245,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
           </Dropdown>
         </div>
 
-        {/* Due Date Badge */}
+        {/* Due Date Badge - more compact */}
         <div className="relative flex-shrink-0">
           <DropdownBadge
             isOpen={openDropdown === 'due'}
@@ -233,11 +256,11 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                 : 'bg-white/5 text-gray-400 border-white/10'
             }
+            buttonRef={dueRef}
           >
             <Calendar size={10} />
-            <span className="hidden sm:inline max-w-[40px] truncate">{dueDateDisplay?.text || '—'}</span>
           </DropdownBadge>
-          <Dropdown isOpen={openDropdown === 'due'} onClose={() => setOpenDropdown(null)}>
+          <Dropdown isOpen={openDropdown === 'due'} onClose={() => setOpenDropdown(null)} anchorRef={dueRef}>
             <button
               onClick={() => handleDueDateChange(new Date().toISOString())}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
@@ -289,11 +312,12 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                 : 'bg-white/5 text-gray-400 border-white/10'
             }
+            buttonRef={assigneeRef}
           >
             {assignee?.is_ai ? <Bot size={10} /> : <UserIcon size={10} />}
             <span className="hidden xl:inline max-w-[50px] truncate ml-0.5">{assignee?.name?.split(' ')[0] || '—'}</span>
           </DropdownBadge>
-          <Dropdown isOpen={openDropdown === 'assignee'} onClose={() => setOpenDropdown(null)}>
+          <Dropdown isOpen={openDropdown === 'assignee'} onClose={() => setOpenDropdown(null)} anchorRef={assigneeRef}>
             <button
               onClick={() => handleAssigneeChange(null)}
               className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10 ${!task.assignee_id ? 'bg-white/5' : ''}`}
