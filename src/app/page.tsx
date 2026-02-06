@@ -450,6 +450,12 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Mobile Nav */}
+              <nav className="flex sm:hidden items-center gap-1 bg-white/5 rounded-lg p-1 mr-1">
+                <a href="/" className="px-2 py-1.5 rounded text-xs font-medium bg-purple-600 text-white">Tasks</a>
+                <a href="/documents" className="px-2 py-1.5 rounded text-xs font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Docs</a>
+              </nav>
+
               {/* Mobile Filter Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
