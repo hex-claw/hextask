@@ -254,7 +254,7 @@ function DroppableColumn({
         <span className="text-xs sm:text-sm text-gray-500 bg-white/5 px-1.5 sm:px-2 py-0.5 rounded flex-shrink-0">{tasks.length}</span>
       </div>
       
-      <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-320px)] lg:max-h-[calc(100vh-340px)]">
+      <div className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-320px)] lg:max-h-[calc(100vh-340px)] scrollbar-thin scrollbar-glass pr-1">
         {visibleTasks.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-gray-600 text-sm border-2 border-dashed border-white/10 rounded-lg">
             No tasks

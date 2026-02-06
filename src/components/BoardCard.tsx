@@ -86,7 +86,7 @@ function Dropdown({
   return (
     <div 
       ref={ref}
-      className="absolute z-50 mt-1 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[140px]"
+      className="absolute z-[100] mt-1 py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-2xl min-w-[140px] max-h-[200px] overflow-y-auto"
       onClick={(e) => e.stopPropagation()}
     >
       {children}
@@ -129,7 +129,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
   return (
     <div
       onClick={() => onSelect(task)}
-      className="p-2 sm:p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between overflow-hidden"
+      className="p-2 sm:p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between"
     >
       {/* Quick Actions Menu */}
       <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -193,16 +193,16 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
       </div>
 
       {/* Badges row - compact, single line */}
-      <div className="flex items-center gap-1.5 sm:gap-2 mt-auto">
+      <div className="flex items-center gap-1 mt-auto overflow-hidden">
         {/* Priority Badge */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <DropdownBadge
             isOpen={openDropdown === 'priority'}
             onToggle={() => setOpenDropdown(openDropdown === 'priority' ? null : 'priority')}
             className={priority.color}
           >
             <PriorityIcon size={10} />
-            <span className="hidden lg:inline">{priority.label}</span>
+            <span className="hidden xl:inline ml-0.5">{priority.label}</span>
           </DropdownBadge>
           <Dropdown isOpen={openDropdown === 'priority'} onClose={() => setOpenDropdown(null)}>
             {(Object.keys(priorityConfig) as Task['priority'][]).map((p) => {
@@ -223,7 +223,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </div>
 
         {/* Due Date Badge */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <DropdownBadge
             isOpen={openDropdown === 'due'}
             onToggle={() => setOpenDropdown(openDropdown === 'due' ? null : 'due')}
@@ -235,7 +235,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
             }
           >
             <Calendar size={10} />
-            <span className="max-w-[50px] truncate">{dueDateDisplay?.text || '—'}</span>
+            <span className="hidden sm:inline max-w-[40px] truncate">{dueDateDisplay?.text || '—'}</span>
           </DropdownBadge>
           <Dropdown isOpen={openDropdown === 'due'} onClose={() => setOpenDropdown(null)}>
             <button
@@ -279,7 +279,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
         </div>
 
         {/* Assignee Badge */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <DropdownBadge
             isOpen={openDropdown === 'assignee'}
             onToggle={() => setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')}
@@ -291,7 +291,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
             }
           >
             {assignee?.is_ai ? <Bot size={10} /> : <UserIcon size={10} />}
-            <span className="hidden lg:inline max-w-[60px] truncate">{assignee?.name?.split(' ')[0] || '—'}</span>
+            <span className="hidden xl:inline max-w-[50px] truncate ml-0.5">{assignee?.name?.split(' ')[0] || '—'}</span>
           </DropdownBadge>
           <Dropdown isOpen={openDropdown === 'assignee'} onClose={() => setOpenDropdown(null)}>
             <button
