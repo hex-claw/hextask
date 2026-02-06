@@ -134,6 +134,17 @@ export default function Home() {
     router.push('/login')
   }
 
+  // Sync modalTask when tasks change (for subtask updates)
+  useEffect(() => {
+    if (modalTask && modalTask !== 'new') {
+      // Find the updated task in tasks array
+      const updatedTask = tasks.find(t => t.id === modalTask.id)
+      if (updatedTask) {
+        setModalTask(updatedTask)
+      }
+    }
+  }, [tasks])
+
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
     if (filterStatus !== 'all' && task.status !== filterStatus) return false
@@ -160,8 +171,11 @@ export default function Home() {
         // Update existing task
         const { id, subtasks, assignee, ...updateData } = taskData as Task
         
+        // Check if this is a subtask by looking it up in current tasks
+        const isSubtask = tasks.some(t => t.subtasks?.some(st => st.id === id))
+        
         // Optimistic update for subtasks
-        if (taskData.parent_id) {
+        if (isSubtask) {
           setTasks(prevTasks => prevTasks.map(task => {
             if (task.subtasks?.some(st => st.id === id)) {
               return {
