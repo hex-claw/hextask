@@ -551,6 +551,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Content */}
       <div className="px-2 sm:px-4 pb-8 pt-2">

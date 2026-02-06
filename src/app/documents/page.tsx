@@ -463,73 +463,16 @@ export default function DocumentsPage() {
             </p>
           </div>
         ) : (
-          <>
-            {/* Mobile: Card Layout */}
-            <div className="space-y-3 sm:hidden">
-              {paginatedGroups.map((group) => {
-                const bestFormat = getBestFormat(group.formats)
-                const sortedFormats = sortFormats(group.formats)
-                return (
-                  <div key={group.baseName} className="glass p-4 space-y-3">
-                    {/* Title and icon */}
-                    <button
-                      onClick={() => handlePreview(bestFormat)}
-                      className="flex items-start gap-3 w-full text-left"
-                    >
-                      <div className="p-2 bg-white/5 rounded-lg text-purple-400 flex-shrink-0">
-                        {getFileIcon(bestFormat.mime_type)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-sm truncate">{group.displayName}</div>
-                        {group.description && (
-                          <div className="text-xs text-gray-400 line-clamp-2 mt-1">{group.description}</div>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Meta info */}
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <div className="flex items-center gap-2">
-                        {group.creator && (
-                          <span className="flex items-center gap-1">
-                            {group.creator.is_ai ? <Bot size={10} /> : <UserIcon size={10} />}
-                            {group.creator.name}
-                          </span>
-                        )}
-                        <span>•</span>
-                        <span>{format(new Date(group.created_at), 'MMM d')}</span>
-                      </div>
-                      <span className="text-gray-500">
-                        {sortedFormats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
-                      </span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                      <FormatDropdown group={group} type="preview" />
-                      <FormatDropdown group={group} type="download" />
-                      <button
-                        onClick={() => handleDelete(group.baseName)}
-                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Desktop: Table Layout */}
-            <div className="glass overflow-hidden hidden sm:block">
-              <table className="w-full">
+          <div className="glass overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
                 <thead className="bg-white/5 border-b border-white/10">
                   <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400">Document</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden sm:table-cell">Formats</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden md:table-cell">Created By</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-400 hidden lg:table-cell">Date</th>
-                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-400">Actions</th>
+                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400">Document</th>
+                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden md:table-cell">Formats</th>
+                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden lg:table-cell">Created By</th>
+                    <th className="text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hidden xl:table-cell">Date</th>
+                    <th className="text-right px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -537,51 +480,51 @@ export default function DocumentsPage() {
                     const bestFormat = getBestFormat(group.formats)
                     return (
                       <tr key={group.baseName} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3">
+                        <td className="px-3 sm:px-4 py-2 sm:py-3">
                           <button
                             onClick={() => handlePreview(bestFormat)}
                             className="text-left hover:text-purple-400 transition-colors cursor-pointer"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-white/5 rounded-lg text-purple-400">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <div className="p-1.5 sm:p-2 bg-white/5 rounded-lg text-purple-400 flex-shrink-0">
                                 {getFileIcon(bestFormat.mime_type)}
                               </div>
-                              <div>
-                                <div className="font-medium">{group.displayName}</div>
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm truncate max-w-[150px] sm:max-w-[200px]">{group.displayName}</div>
                                 {group.description && (
-                                  <div className="text-xs text-gray-400 line-clamp-1">{group.description}</div>
+                                  <div className="text-xs text-gray-400 line-clamp-1 hidden sm:block">{group.description}</div>
                                 )}
                               </div>
                             </div>
                           </button>
                         </td>
-                        <td className="px-4 py-3 hidden sm:table-cell">
-                          <span className="text-sm text-gray-400">
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
+                          <span className="text-xs sm:text-sm text-gray-400">
                             {group.formats.map(f => getExtension(f.file_name).toUpperCase()).join(', ')}
                           </span>
                         </td>
-                        <td className="px-4 py-3 hidden md:table-cell">
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 hidden lg:table-cell">
                           {group.creator && (
-                            <span className="flex items-center gap-1 text-sm text-gray-400">
+                            <span className="flex items-center gap-1 text-xs sm:text-sm text-gray-400">
                               {group.creator.is_ai ? <Bot size={12} /> : <UserIcon size={12} />}
                               {group.creator.name}
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <span className="text-sm text-gray-400">
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 hidden xl:table-cell">
+                          <span className="text-xs sm:text-sm text-gray-400">
                             {format(new Date(group.created_at), 'MMM d, yyyy')}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 sm:px-4 py-2 sm:py-3">
+                          <div className="flex items-center justify-end gap-1 sm:gap-2">
                             <FormatDropdown group={group} type="preview" />
                             <FormatDropdown group={group} type="download" />
                             <button
                               onClick={() => handleDelete(group.baseName)}
-                              className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors cursor-pointer"
+                              className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors cursor-pointer"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 size={14} className="sm:w-4 sm:h-4" />
                             </button>
                           </div>
                         </td>
@@ -591,7 +534,7 @@ export default function DocumentsPage() {
                 </tbody>
               </table>
             </div>
-          </>
+          </div>
         )}
 
         {/* Pagination */}
