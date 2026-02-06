@@ -2,6 +2,7 @@
 
 import { Task, User, supabase } from '@/lib/supabase'
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { format, isToday, isTomorrow, isPast, addDays } from 'date-fns'
 import { 
   Calendar, 
@@ -11,7 +12,6 @@ import {
   ArrowDown,
   Bot,
   User as UserIcon,
-  ChevronDown,
   Clock,
   MoreVertical,
   Edit,
@@ -30,38 +30,14 @@ const priorityConfig = {
 interface BoardCardProps {
   task: Task
   users: User[]
-  onUpdate: (task: Partial<Task> & { id: string }) => void
+  onUpdate: (updates: Partial<Task> & { id: string }) => void
   onSelect: (task: Task) => void
-  onDelete?: (id: string) => void
+  onDelete?: (taskId: string) => void
   onDuplicate?: (task: Task) => void
 }
 
-const DropdownBadge = ({
-  children,
-  isOpen,
-  onToggle,
-  className = '',
-  buttonRef
-}: {
-  children: React.ReactNode
-  isOpen: boolean
-  onToggle: () => void
-  className?: string
-  buttonRef: React.RefObject<HTMLButtonElement | null>
-}) => {
-  return (
-    <button
-      ref={buttonRef}
-      onClick={(e) => { e.stopPropagation(); onToggle() }}
-      className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] transition-all hover:scale-105 ${className}`}
-    >
-      {children}
-      <ChevronDown size={8} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-    </button>
-  )
-}
-
-function Dropdown({
+// Portal-based dropdown that renders at document.body level
+function DropdownPortal({
   children,
   isOpen,
   onClose,
@@ -70,61 +46,78 @@ function Dropdown({
   children: React.ReactNode
   isOpen: boolean
   onClose: () => void
-  anchorRef: React.RefObject<HTMLButtonElement | null>
+  anchorRef: React.RefObject<HTMLElement | null>
 }) {
-  const ref = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState({ top: 0, left: 0 })
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isOpen && anchorRef.current) {
-      // Use requestAnimationFrame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        if (anchorRef.current) {
-          const rect = anchorRef.current.getBoundingClientRect()
-          setPosition({
-            top: rect.bottom + window.scrollY + 4,
-            left: rect.left + window.scrollX
-          })
-        }
-      })
+      const updatePosition = () => {
+        if (!anchorRef.current) return
+        const rect = anchorRef.current.getBoundingClientRect()
+        setPosition({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX
+        })
+      }
+      
+      updatePosition()
+      
+      // Update position on scroll
+      window.addEventListener('scroll', updatePosition, true)
+      return () => window.removeEventListener('scroll', updatePosition, true)
     }
-  }, [isOpen])
+  }, [isOpen, anchorRef])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          anchorRef.current && !anchorRef.current.contains(event.target as Node)) {
         onClose()
       }
     }
+    
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, anchorRef])
 
-  if (!isOpen) return null
+  if (!isOpen || typeof window === 'undefined') return null
 
-  return (
+  return createPortal(
     <div
-      ref={ref}
+      ref={dropdownRef}
       className="fixed z-[9999] py-1 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-2xl min-w-[140px] max-h-[200px] overflow-y-auto"
-      style={{ top: position.top, left: position.left }}
+      style={{ 
+        top: `${position.top}px`, 
+        left: `${position.left}px`
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       {children}
-    </div>
+    </div>,
+    document.body
   )
 }
 
 export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplicate }: BoardCardProps) {
   const [openDropdown, setOpenDropdown] = useState<'priority' | 'assignee' | 'due' | 'menu' | null>(null)
+  const [mounted, setMounted] = useState(false)
+  
   const priority = priorityConfig[task.priority]
   const PriorityIcon = priority.icon
   const assignee = users.find(u => u.id === task.assignee_id)
-  const priorityRef = useRef<HTMLButtonElement>(null)
-  const dueRef = useRef<HTMLButtonElement>(null)
-  const assigneeRef = useRef<HTMLButtonElement>(null)
+  
+  const priorityRef = useRef<HTMLDivElement>(null)
+  const dueRef = useRef<HTMLDivElement>(null)
+  const assigneeRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handlePriorityChange = async (newPriority: Task['priority']) => {
     onUpdate({ id: task.id, priority: newPriority })
@@ -152,21 +145,35 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
 
   const dueDateDisplay = getDueDateDisplay()
 
+  // Count subtasks
+  const subtaskCount = task.subtasks?.length || 0
+  const completedSubtasks = task.subtasks?.filter(st => st.completed_at).length || 0
+
   return (
     <div
       onClick={() => onSelect(task)}
-      className="p-2 sm:p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between z-0"
+      className="p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer border border-white/5 hover:border-purple-500/30 transition-all group relative aspect-[2/1] flex flex-col justify-between"
     >
-      {/* Quick Actions Menu */}
-      <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Three-dot menu */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           ref={menuRef}
-          onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'menu' ? null : 'menu') }}
+          onClick={(e) => { 
+            e.stopPropagation()
+            setOpenDropdown(openDropdown === 'menu' ? null : 'menu')
+          }}
           className="p-1 hover:bg-white/20 rounded transition-colors"
         >
-          <MoreVertical size={14} className="sm:w-4 sm:h-4 text-gray-400" />
+          <MoreVertical size={14} className="text-gray-400" />
         </button>
-        <Dropdown isOpen={openDropdown === 'menu'} onClose={() => setOpenDropdown(null)} anchorRef={menuRef}>
+      </div>
+
+      {mounted && (
+        <DropdownPortal 
+          isOpen={openDropdown === 'menu'} 
+          onClose={() => setOpenDropdown(null)}
+          anchorRef={menuRef}
+        >
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(task); setOpenDropdown(null) }}
             className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
@@ -195,53 +202,61 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
               <div className="border-t border-white/10 my-1" />
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(task.id); setOpenDropdown(null) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-500/20 text-red-400"
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10 text-red-400"
               >
                 <Trash2 size={12} />
                 Delete
               </button>
             </>
           )}
-        </Dropdown>
-      </div>
+        </DropdownPortal>
+      )}
 
-      {/* Title - single line, truncated, compact with tooltip */}
-      <div className="group/title relative">
-        <h4 className="font-medium text-[10px] sm:text-xs group-hover:text-purple-300 transition-colors pr-5 sm:pr-6 leading-tight truncate">
+      {/* Title with tooltip */}
+      <div className="group/title relative pr-6">
+        <h4 className="font-medium text-xs group-hover:text-purple-300 transition-colors leading-tight truncate">
           {task.title}
         </h4>
         {/* Tooltip */}
-        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-50">
-          <div className="bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl px-3 py-2 max-w-[200px]">
-            <p className="text-xs text-white whitespace-normal">{task.title}</p>
+        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-50 pointer-events-none">
+          <div className="bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl px-3 py-2 max-w-[200px] whitespace-normal">
+            <p className="text-xs text-white">{task.title}</p>
             <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-[#1a1a2e]"></div>
           </div>
         </div>
       </div>
 
-      {/* Middle section - subtask count or spacer */}
-      <div className="flex-1 flex items-center">
-        {task.subtasks && task.subtasks.length > 0 && (
-          <span className="text-[10px] sm:text-xs text-gray-400">
-            {task.subtasks.filter(s => s.status === 'done').length}/{task.subtasks.length} subtasks
-          </span>
-        )}
-      </div>
+      {/* Subtask count (middle section) */}
+      {subtaskCount > 0 && (
+        <div className="flex items-center gap-1 text-[10px] text-gray-400">
+          <div className="w-3 h-3 rounded-sm border border-white/20 flex items-center justify-center">
+            <div className={`w-1.5 h-1.5 rounded-sm ${completedSubtasks === subtaskCount ? 'bg-green-500' : 'bg-white/30'}`} />
+          </div>
+          <span>{completedSubtasks}/{subtaskCount}</span>
+        </div>
+      )}
 
-      {/* Badges row - compact, single line */}
-      <div className="flex items-center gap-1 mt-auto">
-        {/* Priority Badge */}
-        <div className="relative flex-shrink-0">
-          <DropdownBadge
-            isOpen={openDropdown === 'priority'}
-            onToggle={() => setOpenDropdown(openDropdown === 'priority' ? null : 'priority')}
-            className={priority.color}
-            buttonRef={priorityRef}
+      {/* Bottom row: Priority badge, Due date, Assignee */}
+      <div className="flex items-center gap-2 mt-auto">
+        {/* Priority badge - compact */}
+        <div 
+          ref={priorityRef}
+          onClick={(e) => { 
+            e.stopPropagation()
+            setOpenDropdown(openDropdown === 'priority' ? null : 'priority')
+          }}
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] transition-all hover:scale-105 cursor-pointer ${priority.color}`}
+        >
+          <PriorityIcon size={10} />
+          <span className="hidden lg:inline">{priority.label}</span>
+        </div>
+
+        {mounted && (
+          <DropdownPortal 
+            isOpen={openDropdown === 'priority'} 
+            onClose={() => setOpenDropdown(null)}
+            anchorRef={priorityRef}
           >
-            <PriorityIcon size={10} />
-            <span className="hidden xl:inline ml-0.5">{priority.label}</span>
-          </DropdownBadge>
-          <Dropdown isOpen={openDropdown === 'priority'} onClose={() => setOpenDropdown(null)} anchorRef={priorityRef}>
             {(Object.keys(priorityConfig) as Task['priority'][]).map((p) => {
               const config = priorityConfig[p]
               const Icon = config.icon
@@ -256,25 +271,30 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 </button>
               )
             })}
-          </Dropdown>
+          </DropdownPortal>
+        )}
+
+        {/* Due date - just text, clickable */}
+        <div 
+          ref={dueRef}
+          onClick={(e) => { 
+            e.stopPropagation()
+            setOpenDropdown(openDropdown === 'due' ? null : 'due')
+          }}
+          className={`flex items-center gap-1 text-[10px] cursor-pointer hover:bg-white/5 px-1.5 py-0.5 rounded transition-colors ${
+            dueDateDisplay?.urgent ? 'text-red-400' : task.due_date ? 'text-blue-400' : 'text-gray-500'
+          }`}
+        >
+          <Calendar size={10} />
+          <span>{dueDateDisplay?.text || 'No date'}</span>
         </div>
 
-        {/* Due Date Badge - more compact */}
-        <div className="relative flex-shrink-0">
-          <DropdownBadge
-            isOpen={openDropdown === 'due'}
-            onToggle={() => setOpenDropdown(openDropdown === 'due' ? null : 'due')}
-            className={dueDateDisplay?.urgent 
-              ? 'bg-red-500/20 text-red-400 border-red-500/30' 
-              : task.due_date 
-                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                : 'bg-white/5 text-gray-400 border-white/10'
-            }
-            buttonRef={dueRef}
+        {mounted && (
+          <DropdownPortal 
+            isOpen={openDropdown === 'due'} 
+            onClose={() => setOpenDropdown(null)}
+            anchorRef={dueRef}
           >
-            <Calendar size={10} />
-          </DropdownBadge>
-          <Dropdown isOpen={openDropdown === 'due'} onClose={() => setOpenDropdown(null)} anchorRef={dueRef}>
             <button
               onClick={() => handleDueDateChange(new Date().toISOString())}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10"
@@ -299,6 +319,7 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 type="date"
                 onChange={(e) => handleDueDateChange(e.target.value ? new Date(e.target.value).toISOString() : null)}
                 className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-xs"
+                onClick={(e) => e.stopPropagation()}
               />
             </div>
             {task.due_date && (
@@ -312,26 +333,42 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 </button>
               </>
             )}
-          </Dropdown>
+          </DropdownPortal>
+        )}
+
+        {/* Assignee - small avatar circle */}
+        <div 
+          ref={assigneeRef}
+          onClick={(e) => { 
+            e.stopPropagation()
+            setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')
+          }}
+          className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 ${
+            assignee?.is_ai 
+              ? 'bg-purple-500/20 border border-purple-500/30' 
+              : assignee 
+                ? 'bg-blue-500/20 border border-blue-500/30'
+                : 'bg-white/5 border border-white/10'
+          }`}
+          title={assignee?.name || 'Unassigned'}
+        >
+          {assignee?.is_ai ? (
+            <Bot size={12} className="text-purple-400" />
+          ) : assignee ? (
+            <span className="text-[10px] font-medium text-blue-400">
+              {assignee.name.charAt(0).toUpperCase()}
+            </span>
+          ) : (
+            <UserIcon size={12} className="text-gray-400" />
+          )}
         </div>
 
-        {/* Assignee Badge */}
-        <div className="relative flex-shrink-0">
-          <DropdownBadge
-            isOpen={openDropdown === 'assignee'}
-            onToggle={() => setOpenDropdown(openDropdown === 'assignee' ? null : 'assignee')}
-            className={assignee?.is_ai 
-              ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' 
-              : assignee 
-                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                : 'bg-white/5 text-gray-400 border-white/10'
-            }
-            buttonRef={assigneeRef}
+        {mounted && (
+          <DropdownPortal 
+            isOpen={openDropdown === 'assignee'} 
+            onClose={() => setOpenDropdown(null)}
+            anchorRef={assigneeRef}
           >
-            {assignee?.is_ai ? <Bot size={10} /> : <UserIcon size={10} />}
-            <span className="hidden xl:inline max-w-[50px] truncate ml-0.5">{assignee?.name?.split(' ')[0] || '—'}</span>
-          </DropdownBadge>
-          <Dropdown isOpen={openDropdown === 'assignee'} onClose={() => setOpenDropdown(null)} anchorRef={assigneeRef}>
             <button
               onClick={() => handleAssigneeChange(null)}
               className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/10 ${!task.assignee_id ? 'bg-white/5' : ''}`}
@@ -354,8 +391,8 @@ export function BoardCard({ task, users, onUpdate, onSelect, onDelete, onDuplica
                 {user.name}
               </button>
             ))}
-          </Dropdown>
-        </div>
+          </DropdownPortal>
+        )}
       </div>
     </div>
   )
