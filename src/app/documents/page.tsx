@@ -19,7 +19,9 @@ import {
   Trash2,
   Eye,
   ChevronDown,
-  Search
+  Search,
+  Filter,
+  X
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -61,6 +63,7 @@ export default function DocumentsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
 
   // Check auth on mount
   useEffect(() => {
@@ -411,69 +414,48 @@ export default function DocumentsPage() {
   }
 
   return (
-    <main className="min-h-screen gradient-bg">
+    <main className="h-screen gradient-bg flex flex-col overflow-hidden">
       {/* Error banner */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 text-center">
+        <div className="bg-red-500/20 border-b border-red-500/50 text-red-300 px-4 py-2 text-center flex-shrink-0">
           {error}
           <button onClick={() => setError(null)} className="ml-4 underline">Dismiss</button>
         </div>
       )}
 
-      {/* Header */}
-      <header className="glass border-b border-white/10 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-6 min-w-0">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-1.5 sm:p-2 bg-purple-600/30 rounded-lg">
-                  <Hexagon size={20} className="text-purple-400 sm:w-6 sm:h-6" />
+      {/* Unified Header */}
+      <header className="glass flex-shrink-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
+          {/* Top Row: Logo, Actions, Nav */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-purple-600/30 rounded-lg">
+                  <Hexagon size={18} className="text-purple-400" />
                 </div>
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl font-bold">HexTask</h1>
-                  <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">J + Hex Co-working</p>
-                </div>
+                <span className="font-bold text-base sm:text-lg">HexTask</span>
               </div>
 
-              {/* Navigation */}
-              <nav className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
-                <a
-                  href="/"
-                  className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  Tasks
-                </a>
-                <a
-                  href="/documents"
-                  className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-purple-600 text-white whitespace-nowrap"
-                >
-                  Docs
-                </a>
+              {/* Desktop Nav */}
+              <nav className="hidden sm:flex items-center gap-1 bg-white/5 rounded-lg p-1 ml-2">
+                <a href="/" className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Tasks</a>
+                <a href="/documents" className="px-3 py-1.5 rounded-md text-sm font-medium bg-purple-600 text-white">Docs</a>
               </nav>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-              {/* Current user indicator */}
-              {currentUser && (
-                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
-                  <div className={`p-1 rounded-full ${currentUser.is_ai ? 'bg-purple-500/30' : 'bg-blue-500/30'}`}>
-                    {currentUser.is_ai ? (
-                      <Bot size={14} className="text-purple-400" />
-                    ) : (
-                      <UserIcon size={14} className="text-blue-400" />
-                    )}
-                  </div>
-                  <span className="text-sm">{currentUser.name}</span>
-                  <button onClick={handleLogout} className="ml-2 text-gray-400 hover:text-white">
-                    <LogOut size={14} />
-                  </button>
-                </div>
-              )}
+            <div className="flex items-center gap-2">
+              {/* Mobile Filter Toggle */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="sm:hidden p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                {showFilters ? <X size={18} /> : <Filter size={18} />}
+              </button>
 
               {/* Upload button */}
-              <label className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors cursor-pointer text-sm">
-                <Upload size={18} className="sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">Upload Document</span>
+              <label className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors cursor-pointer text-sm">
+                <Upload size={16} />
+                <span className="hidden sm:inline">Upload</span>
                 <input
                   type="file"
                   onChange={handleFileUpload}
@@ -481,34 +463,57 @@ export default function DocumentsPage() {
                   className="hidden"
                 />
               </label>
+
+              {/* Mobile Nav - On the right like Tasks page */}
+              <nav className="flex sm:hidden items-center gap-1 bg-white/5 rounded-lg p-1">
+                <a href="/" className="px-2 py-1.5 rounded text-xs font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Tasks</a>
+                <a href="/documents" className="px-2 py-1.5 rounded text-xs font-medium bg-purple-600 text-white">Docs</a>
+              </nav>
             </div>
           </div>
+
+          {/* Desktop Filters Row */}
+          <div className="hidden sm:flex items-center gap-3 mt-3 pt-3 border-t border-white/10">
+            <div className="relative flex-1 max-w-md">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                className="w-full pl-9 pr-4 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          {/* Mobile Filters Panel */}
+          {showFilters && (
+            <div className="sm:hidden mt-3 pt-3 border-t border-white/10 space-y-2">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search documents..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        {/* Header with search */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div>
+      <div className="flex-1 overflow-auto px-2 sm:px-4 py-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page Title - Desktop only */}
+          <div className="hidden sm:block mb-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-2">Document Center</h2>
             <p className="text-sm sm:text-base text-gray-400">
               Market research, presentations, data analysis, and other files generated during our work together.
             </p>
           </div>
-
-          {/* Search */}
-          <div className="relative min-w-[200px] sm:min-w-[300px]">
-            <input
-              type="text"
-              placeholder="Search documents..."
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
-            />
-            <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          </div>
-        </div>
 
         {documentGroups.length === 0 ? (
           <div className="glass p-8 sm:p-12 text-center">
@@ -628,6 +633,7 @@ export default function DocumentsPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
